@@ -9,6 +9,10 @@ spbackend/
 
 # Distribution / packaging
 .Python
+certs/
+*.pem
+*.key
+*.crt
 build/
 develop-eggs/
 dist/
