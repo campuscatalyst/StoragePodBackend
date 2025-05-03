@@ -9,7 +9,7 @@ services:
       - app_network
 
   nginx:
-    image: ngnix:latest
+    image: nginx:latest
     ports:
       - "443:443"
     volumes:
