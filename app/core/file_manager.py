@@ -2,6 +2,7 @@ import os
 import shutil
 from datetime import datetime
 from fastapi import HTTPException
+from fastapi.responses import FileResponse
 from app.config import STORAGE_DIR
 
 class FileManager:
@@ -74,7 +75,6 @@ class FileManager:
         """
             Create a new directory
         """
-        print(path, directory_name)
 
         abs_path = FileManager.validate_path(path)
         new_dir_path = os.path.join(abs_path, directory_name)
@@ -95,7 +95,6 @@ class FileManager:
             file - the file that needs to be uploaded. 
         """
 
-        print(file)
         abs_path = FileManager.validate_path(path)
 
         if not os.path.isdir(abs_path):
@@ -122,7 +121,6 @@ class FileManager:
         """
 
         abs_path = FileManager.validate_path(path)
-        print(abs_path)
 
         if not os.path.exists(abs_path):
             raise HTTPException(status_code=404, detail="Path not found")
@@ -137,3 +135,24 @@ class FileManager:
         except Exception as e:
             raise HTTPException(status_code=500, detail="Failed to delete the given path")
          
+    @staticmethod
+    def download(path):
+        """
+            This will download file/folder at the given path. 
+        """
+
+        abs_path = FileManager.validate_path(path)
+
+        if not os.path.exists(abs_path):
+            raise HTTPException(status_code=404, detail="Path not found")
+        
+        if os.path.isdir(abs_path):
+            raise HTTPException(status_code=400, detail="Invalid Request")
+        
+        print(os.path.basename(abs_path));
+        
+        return FileResponse(
+            path=abs_path,
+            filename=os.path.basename(abs_path),
+            media_type="application/octet-stream"
+        )
