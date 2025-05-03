@@ -4,6 +4,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: fastapi_app
+    volumes:
+      - /srv:/srv
     restart: always
     networks:
       - app_network
