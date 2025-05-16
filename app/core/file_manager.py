@@ -141,10 +141,13 @@ class FileManager:
             This will download file/folder at the given path. 
         """
 
+        if path == "":
+            raise HTTPException(status_code=400, detail="Invalid Request. Path shouldn't not be empty")
+
         abs_path = FileManager.validate_path(path)
 
         if not os.path.exists(abs_path):
-            raise HTTPException(status_code=404, detail="Path not found")
+            raise HTTPException(status_code=404, detail="File/Folder Path not found")
         
         if os.path.isdir(abs_path):
             raise HTTPException(status_code=400, detail="Invalid Request")
