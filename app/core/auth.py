@@ -123,12 +123,12 @@ class Auth:
 
         if serial_number is None:
             return HTTPException(status_code=503)
-
-        if username == "admin" and password == serial_number:
-            return HTTPException(status_code=403, detail="Reset your password")
-
+        
         # get the hashed password and the given password and verify if they are same, if so then create a jwt and return.
         original_password = Auth.get_password(username=username)
+
+        if username == "admin" and password == serial_number and original_password == "admin":
+            return HTTPException(status_code=403, detail="Reset your password")
 
         if original_password is None:
             return HTTPException(status_code=503)
@@ -144,7 +144,10 @@ class Auth:
             if not token:
                 return HTTPException(status_code=500, detail="Issue in creating the JWT token")
             
-            return token
+            return dict({
+                "status_code": 200,
+                "token": token
+            })
         else:
             # password is wrong.
             return HTTPException(status_code=401)
