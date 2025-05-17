@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Form, Body
 from app.core.auth import Auth
-
+from app.api.routes.models import LoginCredentials
 router = APIRouter()
 
 @router.get("/")
@@ -13,18 +13,18 @@ async def get_all_users():
     return Auth.get_all_users()
 
 @router.post("/")
-async def login(username=Form("", description="Username to login"), password=Form("", description="Password to login")):
+async def login(loginCredentials: LoginCredentials):
     """
         logins the user if valid username & password if not returns 401.
     """
 
-    return Auth.login(username=username, password=password)
+    return Auth.login(username=loginCredentials.username, password=loginCredentials.password)
 
 @router.post("/reset-password")
-async def login(username=Form("", description="Username to login"), password=Form("", description="Password to login")):
+async def login(loginCredentials: LoginCredentials):
     """
         reset the password for the given username
     """
 
-    return Auth.reset_password(username=username, password=password)
+    return Auth.reset_password(username=loginCredentials.username, password=loginCredentials.password)
 
