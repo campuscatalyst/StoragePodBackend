@@ -19,8 +19,6 @@ class Auth:
            
             to_encode.update({ "exp": expire })
 
-            
-
             encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
             return encoded_jwt
@@ -85,8 +83,11 @@ class Auth:
 
     @staticmethod
     def verify_password(original_password, password):
-        return pwd_context.verify(password, original_password)
-
+        try:
+            return pwd_context.verify(password, original_password)
+        except Exception as e:
+            print(e)
+            return False
     @staticmethod
     def get_password(username):
         """
@@ -117,8 +118,8 @@ class Auth:
             return HTTPException(status_code=400, detail="Username/Password not provided")
 
         # for testing added = bc72285ee4b8686b, uncomment below line in prod.
-        # serial_number = "bc72285ee4b8686b"
-        serial_number = Auth.get_serial_number()
+        serial_number = "bc72285ee4b8686b"
+        # serial_number = Auth.get_serial_number()
 
         if serial_number is None:
             return HTTPException(status_code=503)
