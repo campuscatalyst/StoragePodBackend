@@ -3,7 +3,9 @@ from fastapi import APIRouter, HTTPException, Query, UploadFile, Form, Body, Dep
 from app.core.file_manager import FileManager
 from app.core.utils import auth_utils
 
-router = APIRouter(dependencies=[Depends(auth_utils.verify_token)])
+# router = APIRouter(dependencies=[Depends(auth_utils.verify_token)])
+
+router = APIRouter()
 
 @router.get("/")
 async def list_files(path = Query("", description="Path of the folder to be listed")):

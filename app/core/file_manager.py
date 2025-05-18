@@ -4,6 +4,7 @@ from datetime import datetime
 from fastapi import HTTPException
 from fastapi.responses import FileResponse
 from app.config import STORAGE_DIR
+import mimetypes
 
 class FileManager:
     @staticmethod
@@ -136,7 +137,7 @@ class FileManager:
             raise HTTPException(status_code=500, detail="Failed to delete the given path")
          
     @staticmethod
-    def download(path):
+    def download(path, inline = False):
         """
             This will download file/folder at the given path. 
         """
@@ -152,10 +153,22 @@ class FileManager:
         if os.path.isdir(abs_path):
             raise HTTPException(status_code=400, detail="Invalid Request")
         
-        print(os.path.basename(abs_path));
+        file_name = os.path.basename(abs_path)
+        content_type, _ = mimetypes.guess_type(file_name)
+
+        if not content_type:
+            content_type = "application/octet-stream"
+
+        if inline and (content_type.startswith(('image/', 'application/pdf', 'text/'))):
+            return FileResponse(
+                path=abs_path,
+                filename=file_name,
+                media_type=content_type,
+                content_disposition_type="inline"
+            )
         
         return FileResponse(
             path=abs_path,
-            filename=os.path.basename(abs_path),
-            media_type="application/octet-stream"
+            filename=file_name,
+            media_type=content_type
         )
