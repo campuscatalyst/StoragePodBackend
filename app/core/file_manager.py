@@ -36,18 +36,18 @@ class FileManager:
                     "videos": 0,
                     "audio": 0,
                     "documents": 0,
-                    "scan_time": datetime().now()
+                    "scan_time":  datetime.now()
                 }
             
             with open(METRICS_FILE, "r") as f:
                 data = json.load(f)
 
             return {
-                "images": data.media_counts.images or 0,
-                "videos": data.media_counts.videos or 0,
-                "audio": data.media_counts.audio or 0,
-                "documents": data.media_counts.documents or 0,
-                "scan_time": data.scan_info.date or datetime().now()
+                "images": data.get("media_counts", {}).get("images", 0),
+                "videos": data.get("media_counts", {}).get("videos", 0),
+                "audio": data.get("media_counts", {}).get("audio", 0),
+                "documents": data.get("media_counts", {}).get("documents", 0),
+                "scan_time": data.get("scan_info", {}).get("date", datetime.now())
             }
 
         except Exception as e:
