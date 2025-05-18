@@ -3,9 +3,7 @@ from fastapi import APIRouter, HTTPException, Query, UploadFile, Form, Body, Dep
 from app.core.file_manager import FileManager
 from app.core.utils import auth_utils
 
-# router = APIRouter(dependencies=[Depends(auth_utils.verify_token)])
-
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(auth_utils.verify_token)])
 
 @router.get("/")
 async def list_files(path = Query("", description="Path of the folder to be listed")):
@@ -14,6 +12,14 @@ async def list_files(path = Query("", description="Path of the folder to be list
         If no path is provided, returns the empty array
     """
     return FileManager.list_directory(path)
+
+@router.get("/metrics")
+async def get_metrics():
+    """
+        it returns the metrics of the file explorer
+    """
+
+    return FileManager.get_metrics()
 
 @router.post("/")
 async def upload_file(files: List[UploadFile], path = Form("", description="")):

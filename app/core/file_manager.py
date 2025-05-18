@@ -3,8 +3,9 @@ import shutil
 from datetime import datetime
 from fastapi import HTTPException
 from fastapi.responses import FileResponse
-from app.config import STORAGE_DIR
+from app.config import STORAGE_DIR, METRICS_FILE
 import mimetypes
+import json
 
 class FileManager:
     @staticmethod
@@ -23,6 +24,35 @@ class FileManager:
         
         return abs_path
     
+    @staticmethod
+    def get_metrics():
+        """
+            it returns the metrics of the file explorer
+        """
+        try:
+            if not os.path.exists(METRICS_FILE):
+                return {
+                    "images": 0,
+                    "videos": 0,
+                    "audio": 0,
+                    "documents": 0,
+                    "scan_time": datetime().now()
+                }
+            
+            with open(METRICS_FILE, "r") as f:
+                data = json.load(f)
+
+            return {
+                "images": data.media_counts.images or 0,
+                "videos": data.media_counts.videos or 0,
+                "audio": data.media_counts.audio or 0,
+                "documents": data.media_counts.documents or 0,
+                "scan_time": data.scan_info.date or datetime().now()
+            }
+
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error reading metrics: {str(e)}")
+
     @staticmethod
     def get_file_info(path, file_name):
         """
