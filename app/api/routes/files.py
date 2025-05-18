@@ -49,6 +49,6 @@ async def download(path = Query("", description="Path of the file or the folder 
        TODO - to download the folders
     """
 
-    return FileManager.download(path)
+    return FileManager.download(path, inline)
 
 
