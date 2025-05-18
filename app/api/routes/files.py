@@ -43,7 +43,7 @@ async def create_folder(path = Body(""), folderName = Body("")):
     return FileManager.create_directory(path, folderName)
 
 @router.get("/download")
-async def download(path = Query("", description="Path of the file or the folder to be downloaded")):
+async def download(path = Query("", description="Path of the file or the folder to be downloaded"), inline = Query(False, description="if true it will be shown in the webview if not it will be downloaded")):
     """
        To download files/folders
        TODO - to download the folders
