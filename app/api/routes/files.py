@@ -1,9 +1,12 @@
 from typing import List
 from fastapi import APIRouter, HTTPException, Query, UploadFile, Form, Body, Depends
 from app.core.file_manager import FileManager
+from app.api.routes.models import CreateFolderPayload
 from app.core.utils import auth_utils
 
-router = APIRouter(dependencies=[Depends(auth_utils.verify_token)])
+# router = APIRouter(dependencies=[Depends(auth_utils.verify_token)])
+
+router = APIRouter()
 
 @router.get("/")
 async def list_files(path = Query("", description="Path of the folder to be listed")):
@@ -41,12 +44,12 @@ async def delete_item(path = Query("", description="Full path the file or the di
     return await FileManager.delete_item(path)
 
 @router.post("/folder")
-async def create_folder(path = Body(""), folderName = Body("")):
+async def create_folder(payload: CreateFolderPayload):
     """
         This will create a folder in the given path
     """
 
-    return FileManager.create_directory(path, folderName)
+    return FileManager.create_directory(path=payload.path, directory_name=payload.folder_name)
 
 @router.get("/download")
 async def download(path = Query("", description="Path of the file or the folder to be downloaded"), inline = Query(False, description="if true it will be shown in the webview if not it will be downloaded")):

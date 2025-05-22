@@ -9,6 +9,19 @@ import json
 
 class FileManager:
     @staticmethod
+    def validate_foldername(folder_name):
+        if not folder_name:
+            return False
+        
+        if '/' in folder_name or '\x00' in folder_name:
+            return False
+        
+        if len(folder_name) > 255:
+            return False
+        
+        return True
+    
+    @staticmethod
     def validate_path(path):
         """
             Validate and normalize the path to prevent path traversal attacks.
@@ -31,6 +44,7 @@ class FileManager:
         """
         try:
             if not os.path.exists(METRICS_FILE):
+                print("Metrics file not found")
                 return {
                     "images": 0,
                     "videos": 0,
@@ -106,8 +120,18 @@ class FileManager:
         """
             Create a new directory
         """
-
+        
         abs_path = FileManager.validate_path(path)
+
+        if not os.path.exists(abs_path):
+            raise HTTPException(status_code=404, detail="Path not found")
+
+        if directory_name == "":
+            raise HTTPException(status_code=400, detail="Directory name should not be empty")
+        
+        if not FileManager.validate_foldername(directory_name):
+            raise HTTPException(status_code=400, detail="Invalid directory name")
+        
         new_dir_path = os.path.join(abs_path, directory_name)
 
         if os.path.exists(new_dir_path):

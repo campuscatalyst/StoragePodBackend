@@ -8,6 +8,7 @@ services:
       - .env
     volumes:
       - /srv:/srv
+      - /root/scripts:/root/scripts
     restart: always
     networks:
       - app_network

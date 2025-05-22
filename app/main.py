@@ -32,6 +32,6 @@ app.add_middleware(
 app.include_router(files.router, prefix="/api/v1/files", tags=["files"])
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 
-@app.get("/server-status")
+@app.get("/api1/v1/server-status")
 def server_status():
     return {"status": "online"}
