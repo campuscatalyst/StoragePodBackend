@@ -1,13 +1,20 @@
 import os
 import shutil
 from datetime import datetime
-from fastapi import HTTPException
-from fastapi.responses import FileResponse
+from fastapi import HTTPException, BackgroundTasks
+from fastapi.responses import FileResponse, JSONResponse
 from app.config import STORAGE_DIR, METRICS_FILE
+from pathlib import Path
 import mimetypes
 import json
+import uuid
+import zipfile
+from typing import Dict
+
+progress_store: Dict[str, int] = {}
 
 class FileManager:
+
     @staticmethod
     def validate_foldername(folder_name):
         if not folder_name:
@@ -226,3 +233,60 @@ class FileManager:
             filename=file_name,
             media_type=content_type
         )
+    
+    @staticmethod
+    def zip_folder(folder_path, output_path, task_id):
+        all_files = [f for f in folder_path.rglob("*") if f.is_file()]
+        total_files = len(all_files)
+
+        try:
+            with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+                for idx, file in enumerate(all_files):
+                    try:
+                        relative_path = file.relative_to(folder_path)
+                        zipf.write(file, arcname=relative_path)
+                    except Exception as file_error:
+                        print(f"Failed to add {file}: {file_error}")
+                    progress = int((idx + 1) / total_files * 100)
+                    progress_store[task_id] = progress
+            progress_store[task_id] = 100
+        except Exception as e:
+            print(f"Compression failed: {e}")
+            progress_store[task_id] = -1
+
+    @staticmethod
+    def get_progress(task_id):
+        print(task_id)
+        print(progress_store)
+
+        progress = progress_store.get(task_id)
+
+        if progress is None:
+            raise HTTPException(status_code=404, detail="Task not found")
+        
+        return {"task_id": task_id, "progress": progress}
+
+    @staticmethod
+    def compress_folder(path, background_tasks: BackgroundTasks):
+
+        if path == "" or path == "/":
+            raise HTTPException(status_code=404, detail="File/Folder Path not found")
+
+        abs_path = FileManager.validate_path(path)
+
+        if not os.path.exists(abs_path):
+            raise HTTPException(status_code=404, detail="File/Folder Path not found")
+        
+        if not os.path.isdir(abs_path):
+            raise HTTPException(status_code=404, detail="Invalid folder path")
+        
+        folder_name = os.path.basename(abs_path)
+        parentFolder = os.path.dirname(abs_path)
+       
+        output_zip = f"{parentFolder}/{folder_name}.zip"
+        task_id = str(uuid.uuid4())
+        progress_store[task_id] = 0
+
+        background_tasks.add_task(FileManager.zip_folder, Path(abs_path), output_zip, task_id)
+
+        return {"task_id": task_id, "zip_path": str(output_zip)}

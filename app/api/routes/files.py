@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, HTTPException, Query, UploadFile, Form, Body, Depends
+from fastapi import APIRouter, HTTPException, Query, UploadFile, Form, Body, Depends, BackgroundTasks
 from app.core.file_manager import FileManager
 from app.api.routes.models import CreateFolderPayload
 from app.core.utils import auth_utils
@@ -60,4 +60,18 @@ async def download(path = Query("", description="Path of the file or the folder 
 
     return FileManager.download(path, inline)
 
+@router.post("/compress")
+async def compress(background_tasks: BackgroundTasks, path = Query("", description="Path of the file or the folder to be downloaded"), ):
+    """
+       To compress folders
+    """
 
+    return FileManager.compress_folder(path, background_tasks)
+
+@router.get("/compress-progress")
+async def get_compress_progress(task_id = Query("", description="task id to be monitored")):
+    """
+       To get progress of the folder compression
+    """
+
+    return FileManager.get_progress(task_id)
