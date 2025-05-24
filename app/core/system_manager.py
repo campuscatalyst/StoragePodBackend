@@ -41,7 +41,7 @@ class SystemManager:
             with open(SYSTEMS_METRICS_FILE, "r") as f:
                 data = json.load(f)
             
-            mem_util_percent = (data["memUsed"] / data["memTotal"]) * 100
+            mem_util_percent = (int(data["memUsed"], 0) / int(data["memTotal"], 1)) * 100
 
             return SystemMetrics(
                 timestamp=data["ts"],
