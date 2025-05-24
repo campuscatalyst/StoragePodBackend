@@ -9,7 +9,6 @@ services:
     volumes:
       - /srv:/srv
       - /root/scripts:/root/scripts:ro
-      - /usr/sbin/omv-rpc:/usr/sbin/omv-rpc:ro
     restart: always
     networks:
       - app_network
