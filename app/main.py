@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import files, auth
+from app.api.routes import files, auth, system
 from contextlib import asynccontextmanager
 from app.db.main import init_db
 from app.core.auth import Auth
@@ -30,6 +30,7 @@ app.add_middleware(
 )
 
 app.include_router(files.router, prefix="/api/v1/files", tags=["files"])
+app.include_router(system.router, prefix="/api/v1/system", tags=["system"])
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 
 @app.get("/api1/v1/server-status")

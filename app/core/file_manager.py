@@ -256,9 +256,6 @@ class FileManager:
 
     @staticmethod
     def get_progress(task_id):
-        print(task_id)
-        print(progress_store)
-
         progress = progress_store.get(task_id)
 
         if progress is None:
