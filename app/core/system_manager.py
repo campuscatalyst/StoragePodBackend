@@ -33,10 +33,10 @@ class SystemManager:
                 "message": "Invalid JSON output"
             }
         except Exception as e:
+            print(e)
             return {
                 "status": "error",
                 "message": "internal error",
-                "stderr": e.strip()
             }
     @staticmethod
     def get_harddisks_data():
@@ -66,8 +66,8 @@ class SystemManager:
                 "message": "Invalid JSON output"
             }
         except Exception as e:
+            print(e)
             return {
                 "status": "error",
                 "message": "internal error",
-                "stderr": e.strip()
             }
