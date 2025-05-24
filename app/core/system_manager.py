@@ -9,7 +9,7 @@ class SystemManager:
     def get_filesystem_data():
         try:
             result = subprocess.run(
-                ["omv-rpc", "-u", "admin", "FileSystemMgmt", "enumerateMountedFilesystems", '{"includeroot": true}'], 
+                ["/root/scripts/system_scripts/get_filesystem_info.sh"], 
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE, 
                 text=True, 
@@ -42,7 +42,7 @@ class SystemManager:
     def get_harddisks_data():
         try:
             result = subprocess.run(
-                ["omv-rpc", "-u", "admin", "DiskMgmt", "getList", '{"start": 0, "limit": 50}'], 
+                ["/root/scripts/system_scripts/get_disks_info.sh"], 
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE, 
                 text=True, 
