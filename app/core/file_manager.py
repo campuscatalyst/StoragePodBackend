@@ -157,6 +157,9 @@ class FileManager:
         try:
             for idx, file in enumerate(files):
                 file_path = os.path.join(path, file.filename)
+                upload_tasks[task_id]["files"][idx]["filename"] = file.filename
+                upload_tasks[task_id]["files"][idx]["written"] = 0
+
                 written = 0
 
                 with open(file_path, "wb") as out_file:
@@ -191,19 +194,14 @@ class FileManager:
 
         upload_tasks[task_id] = {
             "status": "uploading",
-            "files": [{
-                "filename": f.filename,
-                "bytes_written": 0,
-                "total_bytes": int(f.headers.get("content-length") or 0),
-                "percent": 0.0
-            } for f in files]
+            "files": [{"filename": "pending", "written": 0, "total_bytes": 0, "percent": 0.0} for _ in files]
         }
         
         background_tasks.add_task(FileManager.upload_file, abs_path, files, task_id)
 
         return {"task_id": task_id, "message": "Upload started"}
     
-    async def get_upload_progress(task_id):
+    def get_upload_progress(task_id):
         task = upload_tasks.get(task_id)
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
