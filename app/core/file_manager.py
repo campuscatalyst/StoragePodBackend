@@ -1,7 +1,7 @@
-import os
+import os, asyncio
 import shutil
 from datetime import datetime
-from fastapi import HTTPException, BackgroundTasks
+from fastapi import HTTPException, BackgroundTasks, status
 from fastapi.responses import FileResponse, JSONResponse
 from app.config import STORAGE_DIR, METRICS_FILE
 from pathlib import Path
@@ -12,6 +12,8 @@ import zipfile
 from typing import Dict
 
 progress_store: Dict[str, int] = {}
+upload_tasks: Dict[str, Dict] = {}
+upload_lock = asyncio.Lock()
 
 class FileManager:
 
@@ -149,9 +151,32 @@ class FileManager:
             return FileManager.get_file_info(abs_path, directory_name)
         except Exception as e:
             raise HTTPException(status_code=500, detail="Failed to create directory")
-        
+
     @staticmethod
-    async def upload_file(path, file):
+    def upload_file(path, files, task_id):
+        try:
+            for idx, file in enumerate(files):
+                file_path = os.path.join(path, file.filename)
+                written = 0
+
+                with open(file_path, "wb") as out_file:
+                    while True:
+                        chunk = file.file.read(1024 * 1024)
+                        if not chunk:
+                            break
+                        out_file.write(chunk)
+                        written += len(chunk)
+                        upload_tasks[task_id]["files"][idx]["written"] = written
+
+                file.file.close()
+
+            upload_tasks[task_id]["status"] = "done"    
+        except Exception as e:
+            upload_tasks[task_id]["status"] = "failed"
+            upload_tasks[task_id]["error"] = str(e)
+
+    @staticmethod
+    async def upload_files_wrapper(path, files, background_tasks: BackgroundTasks):
         """
             path - destination path
             file - the file that needs to be uploaded. 
@@ -162,19 +187,27 @@ class FileManager:
         if not os.path.isdir(abs_path):
             raise HTTPException(status_code=400, detail="Destination is not a directory")
         
-        # add file extension logic here if needed, to restrict/allow file extensions
+        task_id = str(uuid.uuid4())
 
-        file_path = os.path.join(abs_path, file.filename)
+        upload_tasks[task_id] = {
+            "status": "uploading",
+            "files": [{
+                "filename": f.filename,
+                "bytes_written": 0,
+                "total_bytes": int(f.headers.get("content-length") or 0),
+                "percent": 0.0
+            } for f in files]
+        }
+        
+        background_tasks.add_task(FileManager.upload_file, abs_path, files, task_id)
 
-        try:
-            with open(file_path, "wb") as buffer:
-                shutil.copyfileobj(file.file, buffer)
-
-            return FileManager.get_file_info(abs_path, file.filename)
-        except Exception as e:
-             raise HTTPException(status_code=500, detail="Failed to upload your file")
-        finally:
-            file.file.close()
+        return {"task_id": task_id, "message": "Upload started"}
+    
+    async def get_upload_progress(task_id):
+        task = upload_tasks.get(task_id)
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+        return task
 
     @staticmethod
     async def delete_item(path):

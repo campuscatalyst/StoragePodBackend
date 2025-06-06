@@ -25,16 +25,20 @@ async def get_metrics():
     return FileManager.get_metrics()
 
 @router.post("/")
-async def upload_file(files: List[UploadFile], path = Form("", description="")):
+async def upload_file(background_tasks: BackgroundTasks, files: List[UploadFile], path = Form("", description="")):
     """
         Upload a file to the specified directory.
         If no path is provided, uploads to the root directory.
     """
-    response_details = []
-    for file in files:
-        response_details.append(await FileManager.upload_file(path, file))
+    return FileManager.upload_files_wrapper(path=path, files=files, background_tasks=background_tasks)
 
-    return response_details
+@router.get("/upload-progress")
+async def get_upload_progress(task_id = Query("", description="task id to be monitored")):
+    """
+       To get progress of the upload folder
+    """
+
+    return FileManager.get_upload_progress(task_id)
 
 @router.delete("/")
 async def delete_item(path = Query("", description="Full path the file or the directory to delete")):

@@ -4,6 +4,7 @@ from app.api.routes import files, auth, system
 from contextlib import asynccontextmanager
 from app.db.main import init_db
 from app.core.auth import Auth
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -20,6 +21,7 @@ async def lifespan(app: FastAPI):
     
 # Create the FastAPI app
 app = FastAPI(title="Files Explorer API", lifespan=lifespan)
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*.campuscatalyst.info", "*.local", "localhost", "127.0.0.1"])
 
 app.add_middleware(
     CORSMiddleware,
@@ -33,6 +35,6 @@ app.include_router(files.router, prefix="/api/v1/files", tags=["files"])
 app.include_router(system.router, prefix="/api/v1/system", tags=["system"])
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 
-@app.get("/api1/v1/server-status")
+@app.get("/api/v1/server-status")
 def server_status():
     return {"status": "online"}
