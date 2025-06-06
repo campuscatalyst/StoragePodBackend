@@ -1,4 +1,4 @@
-import os, asyncio
+import os
 import shutil
 from datetime import datetime
 from fastapi import HTTPException, BackgroundTasks, status
@@ -13,7 +13,6 @@ from typing import Dict
 
 progress_store: Dict[str, int] = {}
 upload_tasks: Dict[str, Dict] = {}
-upload_lock = asyncio.Lock()
 
 class FileManager:
 
