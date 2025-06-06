@@ -161,7 +161,7 @@ class FileManager:
 
                 with open(file_path, "wb") as out_file:
                     while True:
-                        chunk = file.file.read(1024 * 1024)
+                        chunk = file.file.read(16 * 1024 * 1024) # we can increase the chunk size to 32 MB which can increase the performance significantly.
                         if not chunk:
                             break
                         out_file.write(chunk)

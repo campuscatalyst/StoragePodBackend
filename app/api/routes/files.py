@@ -30,7 +30,7 @@ async def upload_file(background_tasks: BackgroundTasks, files: List[UploadFile]
         Upload a file to the specified directory.
         If no path is provided, uploads to the root directory.
     """
-    return FileManager.upload_files_wrapper(path=path, files=files, background_tasks=background_tasks)
+    return await FileManager.upload_files_wrapper(path=path, files=files, background_tasks=background_tasks)
 
 @router.get("/upload-progress")
 async def get_upload_progress(task_id = Query("", description="task id to be monitored")):
