@@ -38,7 +38,7 @@ async def get_upload_progress(task_id = Query("", description="task id to be mon
        To get progress of the upload folder
     """
 
-    return await FileManager.get_upload_progress(task_id)
+    return FileManager.get_upload_progress(task_id)
 
 @router.delete("/")
 async def delete_item(path = Query("", description="Full path the file or the directory to delete")):
