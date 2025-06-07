@@ -11,7 +11,7 @@ def getDestinationFolder(base_path="/srv"):
     for entry in os.listdir(base_path):
         full_path = os.path.join(base_path, entry)
         if os.path.isdir(full_path) and entry.startswith("dev-disk-"):
-            return f"${full_path}/Folder1"
+            return f"{full_path}/Folder1"
     return None
 
 STORAGE_DIR = os.environ.get("STORAGE_DIR", getDestinationFolder())
