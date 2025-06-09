@@ -118,8 +118,7 @@ class Auth:
             return HTTPException(status_code=400, detail="Username/Password not provided")
 
         # for testing added = bc72285ee4b8686b, uncomment below line in prod.
-        serial_number = "bc72285ee4b8686b"
-        # serial_number = Auth.get_serial_number()
+        serial_number = Auth.get_serial_number()
 
         if serial_number is None:
             return HTTPException(status_code=503)

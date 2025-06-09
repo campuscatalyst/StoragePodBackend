@@ -15,7 +15,6 @@ def getDestinationFolder(base_path="/srv"):
     return None
 
 STORAGE_DIR = os.environ.get("STORAGE_DIR", getDestinationFolder())
-print(STORAGE_DIR)
 
 JSON_DIR = "/root/scripts/json"
 METRICS_FILE = os.path.join(JSON_DIR, "metrics.json")
