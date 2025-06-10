@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, HTTPException, Query, UploadFile, Form, Body, Depends, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Query, UploadFile, Form, Body, Depends, BackgroundTasks, Request
 from app.core.file_manager import FileManager
 from app.api.routes.models import CreateFolderPayload
 from app.core.utils import auth_utils
@@ -25,12 +25,13 @@ async def get_metrics():
     return FileManager.get_metrics()
 
 @router.post("/")
-async def upload_file(background_tasks: BackgroundTasks, files: List[UploadFile], path = Form("", description="")):
+async def upload_file(request: Request,background_tasks: BackgroundTasks, path = Query("", description=""), filename = Query("", description="")):
     """
         Upload a file to the specified directory.
         If no path is provided, uploads to the root directory.
     """
-    return await FileManager.upload_files_wrapper(path=path, files=files, background_tasks=background_tasks)
+
+    return await FileManager.upload_files_wrapper(request, background_tasks=background_tasks, path=path, filename=filename)
 
 @router.get("/upload-progress")
 async def get_upload_progress(task_id = Query("", description="task id to be monitored")):

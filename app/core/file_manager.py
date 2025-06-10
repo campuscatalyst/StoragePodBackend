@@ -1,7 +1,7 @@
-import os
+import os, asyncio
 import shutil
 from datetime import datetime
-from fastapi import HTTPException, BackgroundTasks, status
+from fastapi import HTTPException, BackgroundTasks, status, Request
 from fastapi.responses import FileResponse, JSONResponse
 from app.config import STORAGE_DIR, METRICS_FILE
 from pathlib import Path
@@ -10,6 +10,9 @@ import json
 import uuid
 import zipfile
 from typing import Dict
+from app.core.utils.upload_tasks import fail_task, GLOBAL_LOCK, init_task, complete_task, get_task_status
+from app.core.utils.file_utils import TrackingFileTarget, SingleFileStreamingParser
+from streaming_form_data import StreamingFormDataParser
 
 progress_store: Dict[str, int] = {}
 upload_tasks: Dict[str, Dict] = {}
@@ -52,7 +55,6 @@ class FileManager:
         """
         try:
             if not os.path.exists(METRICS_FILE):
-                print("Metrics file not found")
                 return {
                     "images": 0,
                     "videos": 0,
@@ -151,38 +153,39 @@ class FileManager:
         except Exception as e:
             raise HTTPException(status_code=500, detail="Failed to create directory")
 
-    @staticmethod
-    def upload_file(path, files, task_id):
+    async def handle_upload(request: Request, dest_dir, task_id, filename):
+        """Handle multiple large file uploads in streaming fashion"""
+
         try:
-            for idx, file in enumerate(files):
-                file_path = os.path.join(path, file.filename)
-                upload_tasks[task_id]["files"][idx]["filename"] = file.filename
-                upload_tasks[task_id]["files"][idx]["written"] = 0
+            content_type = request.headers.get("Content-Type", "")
+            if not content_type or not content_type.startswith("multipart/form-data"):
+                raise ValueError("Content-Type must be multipart/form-data for file uploads")
 
-                written = 0
+            parser = StreamingFormDataParser(headers=request.headers)
+            await init_task(task_id, filename=filename)
+            parser = SingleFileStreamingParser(request_headers=request.headers, dest_dir=dest_dir, task_id=task_id, filename=filename)
+            saved_filename = await parser.parse_and_save_files(request)
 
-                with open(file_path, "wb") as out_file:
-                    while True:
-                        chunk = file.file.read(16 * 1024 * 1024) # we can increase the chunk size to 32 MB which can increase the performance significantly.
-                        if not chunk:
-                            break
-                        out_file.write(chunk)
-                        written += len(chunk)
-                        upload_tasks[task_id]["files"][idx]["written"] = written
+            if not saved_filename:
+                raise ValueError("No file was uploaded")
+            
+            await complete_task(task_id)
 
-                file.file.close()
+            return {"uploaded_file": saved_filename}
 
-            upload_tasks[task_id]["status"] = "done"    
         except Exception as e:
-            upload_tasks[task_id]["status"] = "failed"
-            upload_tasks[task_id]["error"] = str(e)
-
+            await fail_task(task_id, str(e))
+            raise
+    
     @staticmethod
-    async def upload_files_wrapper(path, files, background_tasks: BackgroundTasks):
+    async def upload_files_wrapper(request: Request, background_tasks: BackgroundTasks, path: str, filename: str):
         """
             path - destination path
             file - the file that needs to be uploaded. 
         """
+
+        if GLOBAL_LOCK.locked():
+            return HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Another upload is in progress") 
 
         abs_path = FileManager.validate_path(path)
 
@@ -191,19 +194,15 @@ class FileManager:
         
         task_id = str(uuid.uuid4())
 
-        upload_tasks[task_id] = {
-            "status": "uploading",
-            "files": [{"filename": "pending", "written": 0, "total_bytes": 0, "percent": 0.0} for _ in files]
-        }
-        
-        background_tasks.add_task(FileManager.upload_file, abs_path, files, task_id)
-
-        return {"task_id": task_id, "message": "Upload started"}
+        try:
+            result = await FileManager.handle_upload(request=request, dest_dir=abs_path, task_id=task_id, filename=filename)
+            return {"task_id": task_id, "result": result}
+        except Exception as e:
+            await fail_task(task_id, str(e))
+            raise HTTPException(status_code=500, detail=str(e))
     
     def get_upload_progress(task_id):
-        task = upload_tasks.get(task_id)
-        if not task:
-            raise HTTPException(status_code=404, detail="Task not found")
+        task = get_task_status(task_id=task_id)
         return task
 
     @staticmethod

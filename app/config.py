@@ -5,14 +5,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-#here we need to find a logic to find the destination dir. "/srv/dev-disk-by-uuid-09698ee9-3b6f-4504-b43d-d7b527129ac9/Folder1"
-
 def getDestinationFolder(base_path="/srv"):
-    for entry in os.listdir(base_path):
-        full_path = os.path.join(base_path, entry)
-        if os.path.isdir(full_path) and entry.startswith("dev-disk-"):
-            return f"{full_path}/Folder1"
-    return None
+    try:
+        for entry in os.listdir(base_path):
+            full_path = os.path.join(base_path, entry)
+            if os.path.isdir(full_path) and entry.startswith("dev-disk-"):
+                return f"{full_path}/Folder1"
+        return None
+    except FileNotFoundError:
+        return None
 
 STORAGE_DIR = os.environ.get("STORAGE_DIR", getDestinationFolder())
 
