@@ -24,6 +24,10 @@ class ChangeLogger(FileSystemEventHandler):
 
         print(log_entry)
 
+        if log_entry.get("event") == "opened" or log_entry.get("event") == "closed":
+            # we don't need these events to be written the logs. 
+            return
+
         # Append to file
         try:
             if os.path.exists(LOG_FILE):
