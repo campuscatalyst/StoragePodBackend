@@ -3,7 +3,7 @@ import shutil
 from datetime import datetime
 from fastapi import HTTPException, BackgroundTasks, status, Request
 from fastapi.responses import FileResponse, JSONResponse
-from app.config import STORAGE_DIR, METRICS_FILE
+from app.config import STORAGE_DIR, METRICS_FILE, RECENT_ACTIVITY_FILE
 from pathlib import Path
 import mimetypes
 import json
@@ -316,3 +316,12 @@ class FileManager:
         background_tasks.add_task(FileManager.zip_folder, Path(abs_path), output_zip, task_id)
 
         return {"task_id": task_id, "zip_path": str(output_zip)}
+    
+    @staticmethod
+    def get_recent_activity():
+        try:
+            with open(RECENT_ACTIVITY_FILE) as f:
+                return json.load(f)
+        except FileNotFoundError:
+            print("file not found")
+            return []

@@ -5,7 +5,7 @@ import time
 import json
 import os
 
-LOG_FILE = "/var/log/storagepod_recent_activity.json"
+LOG_FILE = "/var/log/storagepod/storagepod_recent_activity.json"
 
 class ChangeLogger(FileSystemEventHandler):
     def on_any_event(self, event):

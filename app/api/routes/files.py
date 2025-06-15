@@ -4,7 +4,7 @@ from app.core.file_manager import FileManager
 from app.api.routes.models import CreateFolderPayload
 from app.core.utils import auth_utils
 import json
-from app.config import RECENT_ACTIVITY_FILE
+
 
 # router = APIRouter(dependencies=[Depends(auth_utils.verify_token)])
 
@@ -85,8 +85,8 @@ async def get_compress_progress(task_id = Query("", description="task id to be m
 
 @router.get("/recent-activity")
 def get_recent_activity():
-    try:
-        with open(RECENT_ACTIVITY_FILE) as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return []
+    """
+        To get the recent activity in the Folder1 path
+    """
+
+    return FileManager.get_recent_activity()

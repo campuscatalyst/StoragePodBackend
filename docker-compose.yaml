@@ -13,6 +13,7 @@ services:
     volumes:
       - /srv:/srv
       - /root/scripts:/root/scripts:ro
+      - /var/log/storagepod:/var/log/storagepod:ro
     restart: always
     networks:
       - app_network
