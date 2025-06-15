@@ -14,7 +14,7 @@ class ChangeLogger(FileSystemEventHandler):
         
         event_type = event.event_type  # created, modified, deleted, moved
 
-        if event_type in {"opened", "closed"}:
+        if event_type not in {"created", "modified"}:
             return
 
         file_path = event.src_path

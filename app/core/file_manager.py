@@ -321,7 +321,19 @@ class FileManager:
     def get_recent_activity():
         try:
             with open(RECENT_ACTIVITY_FILE) as f:
-                return json.load(f)
+                data = json.load(f)
+
+            latest_by_path = {}
+            for entry in data:
+                path = entry["path"]
+                ts = datetime.fromisoformat(entry["timestamp"])
+
+                if path not in latest_by_path or ts > datetime.fromisoformat(latest_by_path[path]["timestamp"]):
+                    latest_by_path[path] = entry
+
+            recent = sorted(latest_by_path.values(), key=lambda e: e["timestamp"], reverse=True)
+            return recent
+
         except FileNotFoundError:
             print("file not found")
             return []
