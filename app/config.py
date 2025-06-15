@@ -23,6 +23,7 @@ HARDDISKS_INFO_FILE = os.path.join(JSON_DIR, "hard_disks_info.json")
 SMART_INFO_FILE = os.path.join(JSON_DIR, "smart_info.json")
 FILESYSTEM_INFO_FILE = os.path.join(JSON_DIR, "file_systems_info.json")
 SYSTEMS_METRICS_FILE = os.path.join(JSON_DIR, "systems_metrics.json")
+RECENT_ACTIVITY_FILE = "/var/log/storagepod_recent_activity.json"
 
 class Settings(BaseSettings):
     SECRET_KEY: str
