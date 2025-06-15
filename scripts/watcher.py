@@ -13,6 +13,10 @@ class ChangeLogger(FileSystemEventHandler):
             return
         
         event_type = event.event_type  # created, modified, deleted, moved
+
+        if event_type in {"opened", "closed"}:
+            return
+
         file_path = event.src_path
         timestamp = datetime.now().isoformat()
 
@@ -23,10 +27,6 @@ class ChangeLogger(FileSystemEventHandler):
         }
 
         print(log_entry)
-
-        if log_entry.get("event") == "opened" or log_entry.get("event") == "closed":
-            # we don't need these events to be written the logs. 
-            return
 
         # Append to file
         try:
@@ -47,7 +47,6 @@ class ChangeLogger(FileSystemEventHandler):
             
         except Exception as e:
             print("Log write error:", e)
-
 
 def getDestinationFolder(base_path="/srv"):
     try:
