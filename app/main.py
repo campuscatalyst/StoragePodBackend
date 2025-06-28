@@ -5,14 +5,17 @@ from contextlib import asynccontextmanager
 from app.db.main import init_db
 from app.core.auth import Auth
 from starlette.middleware.trustedhost import TrustedHostMiddleware
+from app.logger import logger
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Starting up: initializing database...")
+    logger.info("Starting up the SQL DB")
+    
     init_db()
-    sucess = Auth.create_initial_user()
+    success = Auth.create_initial_user()
 
-    if not sucess:
+    if not success:
         raise RuntimeError("Failed to create initial user. Aborting startup.")
     
     yield
