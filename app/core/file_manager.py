@@ -414,6 +414,9 @@ class FileManager:
         if not os.path.isdir(abs_dst_path):
             raise HTTPException(status_code=404, detail="Not a directory")
         
+        if abs_src_path == abs_dst_path:
+            raise HTTPException(status_code=404, detail="Both source and destination shouldn't be the same")
+        
         item_name = os.path.basename(abs_src_path)
         new_path = os.path.join(abs_dst_path, item_name)
 
@@ -451,6 +454,9 @@ class FileManager:
         
         if not os.path.isdir(abs_dst_path):
             raise HTTPException(status_code=404, detail="Not a directory")
+
+        if abs_src_path == abs_dst_path:
+            raise HTTPException(status_code=404, detail="Both source and destination shouldn't be the same")
         
         item_name = os.path.basename(abs_src_path)
         new_path = os.path.join(abs_dst_path, item_name)
