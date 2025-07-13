@@ -479,7 +479,7 @@ class FileManager:
             raise HTTPException(status_code=500, detail="Error while copying the file/folder")
 
     @staticmethod
-    def search(q: str = "", type: str = None, sort: str = "modified_at", order: str = "desc", limit: int = 50):
+    def search(q: str = "", type: str | None = None, sort: str = "modified_at", order: str = "desc", limit: int = 50):
         try:
             session = get_session()
 
