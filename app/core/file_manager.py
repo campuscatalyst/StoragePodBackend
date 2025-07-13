@@ -479,7 +479,13 @@ class FileManager:
             raise HTTPException(status_code=500, detail="Error while copying the file/folder")
 
     @staticmethod
-    def search(q: str = "", type: str | None = None, sort: str = "modified_at", order: str = "desc", limit: int = 50):
+    def search(
+        q: str = "", 
+        type: str | None = None, 
+        sort: str | None = None,
+        order: str | None = None,
+        limit: int | None = None
+    ):
         try:
             session = get_session()
 
@@ -487,6 +493,11 @@ class FileManager:
                 logger.error(f'Exception occurred while accessing the session: no session found')
                 raise HTTPException(status_code=500, detail="Internal Error")
             
+            # adding the default values
+            sort = sort or "modified_at"
+            order = order or "desc"
+            limit = limit or 50
+
             query = select(FileEntry)
             if q:
                 query = query.where(FileEntry.name.contains(q))
