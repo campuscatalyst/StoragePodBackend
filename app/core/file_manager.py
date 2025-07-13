@@ -379,11 +379,11 @@ class FileManager:
         
         #TODO - Add folder and file name specific changes in later releases. 
 
-        folder = os.path.dirname(path)
+        folder = os.path.dirname(abs_path)
         new_path = os.path.join(folder, new_name)
 
         try:
-            shutil.move(path, new_path)
+            shutil.move(abs_path, new_path)
             return new_path
         
         except Exception as e:
