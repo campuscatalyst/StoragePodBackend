@@ -23,3 +23,16 @@ class SystemMetrics(BaseModel):
     load_average: LoadAverage
     uptime_seconds: float
     available_package_updates: int
+
+class RenameItemRequest(BaseModel):
+    path: str
+    is_directory: bool
+    new_name: str
+
+class MoveItemRequest(BaseModel):
+    path: str
+    dst_path: str
+
+class CopyItemRequest(BaseModel):
+    path: str
+    dst_path: str

@@ -13,6 +13,10 @@ from typing import Dict
 from app.core.utils.upload_tasks import fail_task, GLOBAL_LOCK, init_task, complete_task, get_task_status
 from app.core.utils.file_utils import TrackingFileTarget, SingleFileStreamingParser
 from streaming_form_data import StreamingFormDataParser
+from app.logger import logger
+from app.db.main import get_session
+from app.db.models import FileEntry
+from sqlmodel import select
 
 progress_store: Dict[str, int] = {}
 upload_tasks: Dict[str, Dict] = {}
@@ -20,14 +24,17 @@ upload_tasks: Dict[str, Dict] = {}
 class FileManager:
 
     @staticmethod
-    def validate_foldername(folder_name):
-        if not folder_name:
+    def validate_itemname(item_name):
+        """
+            This function will validate if the given file/foldername is valid 
+        """
+        if not item_name:
             return False
         
-        if '/' in folder_name or '\x00' in folder_name:
+        if '/' in item_name or '\x00' in item_name:
             return False
         
-        if len(folder_name) > 255:
+        if len(item_name) > 255:
             return False
         
         return True
@@ -55,6 +62,7 @@ class FileManager:
         """
         try:
             if not os.path.exists(METRICS_FILE):
+                logger.error("Metrics file not found, check if the systemd service is running")
                 return {
                     "images": 0,
                     "videos": 0,
@@ -75,6 +83,7 @@ class FileManager:
             }
 
         except Exception as e:
+            logger.error(f'Exception occurred: {e}')
             raise HTTPException(status_code=500, detail=f"Error reading metrics: {str(e)}")
 
     @staticmethod
@@ -139,20 +148,22 @@ class FileManager:
         if directory_name == "":
             raise HTTPException(status_code=400, detail="Directory name should not be empty")
         
-        if not FileManager.validate_foldername(directory_name):
+        if not FileManager.validate_itemname(directory_name):
             raise HTTPException(status_code=400, detail="Invalid directory name")
         
         new_dir_path = os.path.join(abs_path, directory_name)
 
         if os.path.exists(new_dir_path):
-            raise HTTPException(status_code=400, detail="Directory already exisits")
+            raise HTTPException(status_code=400, detail="Directory already exists")
         
         try:
             os.makedirs(new_dir_path)
             return FileManager.get_file_info(abs_path, directory_name)
         except Exception as e:
+            logger.error(f'Exception occurred while creating a directory: {e}')
             raise HTTPException(status_code=500, detail="Failed to create directory")
 
+    @staticmethod
     async def handle_upload(request: Request, dest_dir, task_id, filename):
         """Handle multiple large file uploads in streaming fashion"""
 
@@ -201,6 +212,7 @@ class FileManager:
             await fail_task(task_id, str(e))
             raise HTTPException(status_code=500, detail=str(e))
     
+    @staticmethod
     def get_upload_progress(task_id):
         task = get_task_status(task_id=task_id)
         return task
@@ -224,6 +236,7 @@ class FileManager:
 
             return {"status": "completed"}
         except Exception as e:
+            logger.error(f'Exception occurred: {e}')
             raise HTTPException(status_code=500, detail="Failed to delete the given path")
          
     @staticmethod
@@ -280,7 +293,7 @@ class FileManager:
                     progress_store[task_id] = progress
             progress_store[task_id] = 100
         except Exception as e:
-            print(f"Compression failed: {e}")
+            logger.error(f'Exception occurred while zipping: {e}')
             progress_store[task_id] = -1
 
     @staticmethod
@@ -320,20 +333,168 @@ class FileManager:
     @staticmethod
     def get_recent_activity():
         try:
+
+            if not os.path.exists(RECENT_ACTIVITY_FILE):
+                return []
+
             with open(RECENT_ACTIVITY_FILE) as f:
                 data = json.load(f)
 
             latest_by_path = {}
             for entry in data:
-                path = entry["path"]
-                ts = datetime.fromisoformat(entry["timestamp"])
+                try:
+                    path = entry["path"]
+                    ts = datetime.fromisoformat(entry["timestamp"])
 
-                if path not in latest_by_path or ts > datetime.fromisoformat(latest_by_path[path]["timestamp"]):
-                    latest_by_path[path] = entry
+                    if path not in latest_by_path or ts > datetime.fromisoformat(latest_by_path[path]["timestamp"]):
+                        latest_by_path[path] = entry
+                except Exception as e:
+                    logger.warning(f"Skipping invalid log entry: {entry} ({e})")
+                    continue
 
             recent = sorted(latest_by_path.values(), key=lambda e: e["timestamp"], reverse=True)
             return recent
 
         except FileNotFoundError:
-            print("file not found")
+            logger.error(f'Exception occurred: recent activity file not found')
             return []
+    
+    @staticmethod
+    def rename_item(path: str, is_directory: bool, new_name: str) -> str:
+        """
+            This function will rename the file/folder to the given name.
+
+            path - the path of the file/folder where the name needs to be changed
+            is_directory - true/folder false/file
+            new_name - new name of the file/folder 
+        """
+
+        abs_path = FileManager.validate_path(path)
+
+        if not os.path.exists(abs_path):
+            raise HTTPException(status_code=404, detail="Path not found")
+
+        if not FileManager.validate_itemname(new_name):
+            raise HTTPException(status_code=400, detail="Invalid file/folder name")
+        
+        #TODO - Add folder and file name specific changes in later releases. 
+
+        folder = os.path.dirname(path)
+        new_path = os.path.join(folder, new_name)
+
+        try:
+            shutil.move(path, new_path)
+            return new_path
+        
+        except Exception as e:
+            logger.error(f'Exception occurred while renaming a file/folder: {e}')
+            raise HTTPException(status_code=500, detail="Error while renaming the file/folder")
+
+    @staticmethod
+    def move_item(path: str, dst_path: str) -> str:
+        """
+            This function will move the file from the source path to the destination path
+
+            path - source path
+            dst_path - destination path
+
+            returns the new path after moving. 
+        """
+
+        abs_src_path = FileManager.validate_path(path)
+
+        if not os.path.exists(abs_src_path):
+            raise HTTPException(status_code=404, detail="Path not found")
+        
+        abs_dst_path = FileManager.validate_path(dst_path)
+
+        if not os.path.exists(abs_dst_path):
+            raise HTTPException(status_code=404, detail="Path not found")
+        
+        if not os.path.isdir(abs_dst_path):
+            raise HTTPException(status_code=404, detail="Not a directory")
+        
+        item_name = os.path.basename(abs_src_path)
+        new_path = os.path.join(abs_dst_path, item_name)
+
+        if os.path.exists(new_path):
+            raise HTTPException(status_code=409, detail="Item with same name already exists at destination")
+
+        try:
+            shutil.move(abs_src_path, new_path)
+            logger.info(f"Moved from src - {abs_src_path} to {abs_dst_path}")
+            return new_path
+        except Exception as e:
+            logger.error(f'Exception occurred while moving a file/folder: {e}')
+            raise HTTPException(status_code=500, detail="Error while moving the file/folder")
+
+    @staticmethod
+    def copy_item(path: str, dst_path: str):
+        """
+            This function will copy the file from the source path to the destination path
+
+            path - source path
+            dst_path - destination path
+
+            returns the new path after copying. 
+        """
+
+        abs_src_path = FileManager.validate_path(path)
+
+        if not os.path.exists(abs_src_path):
+            raise HTTPException(status_code=404, detail="Path not found")
+        
+        abs_dst_path = FileManager.validate_path(dst_path)
+
+        if not os.path.exists(abs_dst_path):
+            raise HTTPException(status_code=404, detail="Path not found")
+        
+        if not os.path.isdir(abs_dst_path):
+            raise HTTPException(status_code=404, detail="Not a directory")
+        
+        item_name = os.path.basename(abs_src_path)
+        new_path = os.path.join(abs_dst_path, item_name)
+
+        if os.path.exists(new_path):
+            raise HTTPException(status_code=409, detail="Item with same name already exists at destination")
+
+        try:
+            if os.path.isfile(abs_src_path):
+                shutil.copy2(abs_src_path, new_path)
+            elif os.path.isdir(abs_src_path):
+                shutil.copytree(abs_src_path, new_path)
+            else:
+                raise HTTPException(status_code=400, detail="Unsupported item type")
+            
+            logger.info(f"Copied from src - {abs_src_path} to {new_path}")
+            return new_path
+        except Exception as e:  
+            logger.error(f"Exception occurred while copying file/folder: {e}")
+            raise HTTPException(status_code=500, detail="Error while copying the file/folder")
+
+    @staticmethod
+    def search(q: str = "", type: str = None, sort: str = "modified_at", order: str = "desc", limit: int = 50):
+        try:
+            session = get_session()
+
+            if session is None:
+                logger.error(f'Exception occurred while accessing the session: no session found')
+                raise HTTPException(status_code=500, detail="Internal Error")
+            
+            query = select(FileEntry)
+            if q:
+                query = query.where(FileEntry.name.contains(q))
+            
+            if type in ["file", "folder"]:
+                query = query.where(FileEntry.type == type)
+            
+            sort_column = getattr(FileEntry, sort, FileEntry.modified_at)
+            sort_order = sort_column.desc() if order == "desc" else sort_column.asc()
+
+            query = query.order_by(sort_order).limit(limit)
+            results = session.exec(query).all()
+
+            return results
+        except Exception as e:
+            logger.error(f'Exception occurred while searching: {e}')
+            raise HTTPException(status_code=500, detail="Error while searching")

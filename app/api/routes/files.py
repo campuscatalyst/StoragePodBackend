@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import APIRouter, HTTPException, Query, UploadFile, Form, Body, Depends, BackgroundTasks, Request
 from app.core.file_manager import FileManager
-from app.api.routes.models import CreateFolderPayload
+from app.api.routes.models import CreateFolderPayload, RenameItemRequest, MoveItemRequest, CopyItemRequest
 from app.core.utils import auth_utils
 import json
 
@@ -90,3 +90,27 @@ def get_recent_activity():
     """
 
     return FileManager.get_recent_activity()
+
+@router.patch("/rename")
+def rename_item(rename_payload: RenameItemRequest):
+    """
+        This will rename the given file/folder to the given new name
+    """
+
+    return FileManager.rename_item(rename_payload.path, rename_payload.is_directory, rename_payload.new_name)
+
+@router.post("/move")
+def move_item(move_payload: MoveItemRequest):
+    """
+        This will move the given file/folder to the given dst folder
+    """
+
+    return FileManager.move_item(move_payload.path, move_payload.dst_path)
+
+@router.post("/copy")
+def move_item(copy_payload: CopyItemRequest):
+    """
+        This will move the given file/folder to the given dst folder
+    """
+
+    return FileManager.copy_item(copy_payload.path, copy_payload.dst_path)

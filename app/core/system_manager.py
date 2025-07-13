@@ -4,6 +4,7 @@ from fastapi import HTTPException
 import json
 from app.config import HARDDISKS_INFO_FILE, FILESYSTEM_INFO_FILE, SYSTEMS_METRICS_FILE, SMART_INFO_FILE
 from app.api.routes.models import LoadAverage, SystemMetrics
+from app.logger import logger
 
 class SystemManager:
 
@@ -15,11 +16,8 @@ class SystemManager:
             
             return {"status": "success", "data": data}
         except Exception as e:
-            print(e)
-            return {
-                "status": "error",
-                "message": "internal error",
-            }
+            logger.error(f'Exception occurred while retrieving file system data: {e}')
+            raise HTTPException(500, detail="Internal Error")
     
     @staticmethod
     def get_harddisks_data():
@@ -29,11 +27,8 @@ class SystemManager:
             
             return {"status": "success", "data": data}
         except Exception as e:
-            print(e)
-            return {
-                "status": "error",
-                "message": "internal error",
-            }
+            logger.error(f'Exception occurred while retrieving hard disks data: {e}')
+            raise HTTPException(500, detail="Internal Error")
     
     @staticmethod
     def get_smart_info():
@@ -43,11 +38,8 @@ class SystemManager:
             
             return {"status": "success", "data": data}
         except Exception as e:
-            print(e)
-            return {
-                "status": "error",
-                "message": "internal error",
-            }
+            logger.error(f'Exception occurred while retrieving smart info data: {e}')
+            raise HTTPException(500, detail="Internal Error")
 
     @staticmethod
     def get_system_metrics():
@@ -73,5 +65,5 @@ class SystemManager:
                 available_package_updates=data["availablePkgUpdates"]
             )
         except Exception as e:
-            print(e)
+            logger.error(f'Exception occurred while retrieving system metrics data: {e}')
             raise HTTPException(500, detail="Internal Error")

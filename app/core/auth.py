@@ -6,6 +6,7 @@ from sqlmodel import select
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from app.config import settings
+from app.logger import logger
 
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
@@ -23,7 +24,7 @@ class Auth:
 
             return encoded_jwt
         except Exception as e:
-            print(e)
+            logger.error(f'Exception occurred: {e}')
             return None
         
     @staticmethod
@@ -44,7 +45,7 @@ class Auth:
             return True
         
         except Exception as e:
-            print(e)
+            logger.error(f'Exception occurred: {e}')
             return False
 
     @staticmethod
@@ -57,7 +58,7 @@ class Auth:
             return users
         
         except Exception as e:
-            print(e)
+            logger.error(f'Exception occurred: {e}')
             return HTTPException(status_code=500, detail="Internal Error, unable to get all users")
 
     @staticmethod
@@ -74,7 +75,7 @@ class Auth:
                     
             return None
         except Exception as e:
-            print(e)
+            logger.error(f'Exception occurred: {e}')
             return None
 
     @staticmethod
@@ -86,8 +87,9 @@ class Auth:
         try:
             return pwd_context.verify(password, original_password)
         except Exception as e:
-            print(e)
+            logger.error(f'Exception occurred: {e}')
             return False
+        
     @staticmethod
     def get_password(username):
         """
@@ -100,7 +102,7 @@ class Auth:
 
             return user.password
         except:
-            print("Error while getting the password")
+            logger.error("Error while getting the password")
             return None
         
     @staticmethod
@@ -172,5 +174,5 @@ class Auth:
 
             return HTTPException(status_code=201, detail="Password updated successfully")
         except Exception as e:
-            print(e) 
+            logger.error(f'Exception occurred: {e}')
             return HTTPException(status_code=503) 

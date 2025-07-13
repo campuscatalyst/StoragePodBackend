@@ -1,0 +1,10 @@
+[Unit]
+Description=StoragePod File Monitor
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/storagepod_monitor.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
