@@ -4,10 +4,6 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: fastapi_app
-    depends_on:
-      - redis
-    environment:
-      - REDIS_URL=redis://redis:6379
     env_file:
       - .env
     volumes:
@@ -31,14 +27,7 @@ services:
     restart: always
     networks:
       - app_network
-  
-  redis:
-    image: redis:alpine
-    container_name: redis
-    restart: always
-    networks:
-      - app_network
-    
+
 networks:
   app_network:
     driver: bridge
