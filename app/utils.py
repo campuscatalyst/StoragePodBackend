@@ -36,6 +36,7 @@ def scan_and_insert(root_path: str):
                 stat = os.stat(full_path)
 
                 entry = FileEntry(
+                    file_id=f"{stat.st_dev}-{stat.st_ino}",
                     path=rel_path,
                     name=dirname,
                     type="folder",
@@ -52,6 +53,7 @@ def scan_and_insert(root_path: str):
                 stat = os.stat(full_path)
 
                 entry = FileEntry(
+                    file_id=f"{stat.st_dev}-{stat.st_ino}",
                     path=rel_path,
                     name=name,
                     type="file",
@@ -63,5 +65,6 @@ def scan_and_insert(root_path: str):
 
         # once all the changes are added, then we will commit this. 
         session.commit()
+        logger.info("Successfully scanned the drive and inserted the data into db")
     except Exception as e:
         logger.error(f"Error while scanning the folder to insert into db - {e}")

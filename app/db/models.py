@@ -15,9 +15,9 @@ class User(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=datetime.now)
 
 class FileEntry(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    file_id: str = Field(primary_key=True)
     name: str = Field(index=True)
-    path: str = Field(index=True)
+    path: str = Field(index=True, unique=True)
     type: FileType = Field(index=True)
     size: int
     modified_at: datetime
