@@ -3,7 +3,7 @@ import mimetypes
 from app.db.main import get_session
 from app.logger import logger
 from app.db.models import FileEntry, MediaEntry
-import datetime
+from datetime import datetime
 
 def is_media_file(path: str) -> str | None:
     mime_type, _ = mimetypes.guess_type(path)
