@@ -22,3 +22,25 @@ class FileEntry(SQLModel, table=True):
     size: int
     modified_at: datetime
     created_at: datetime = Field(default_factory=datetime.now)
+
+# ffprobe -v error -select_streams v:0 -show_entries stream=width,height,codec_name,bit_rate,r_frame_rate,duration -of json input.mp4
+
+class MediaEntry(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    path: str # Full file path 
+    folder_path: str # Parent folder path
+    type: str  # 'image' or 'video'
+    size: Optional[int] = 0
+    modified_at: datetime
+
+    # Shared metadata
+    mimetype: Optional[str] = None
+    thumbnail: Optional[str] = None   # Path to thumbnail file (pre-generated)
+
+    # Video-specific
+    duration: Optional[float] = None     # seconds
+    resolution: Optional[str] = None     # '1920x1080'
+    codec: Optional[str] = None          # e.g. 'H.264'
+    bitrate: Optional[int] = None        # kbps
+    framerate: Optional[float] = None    # fps

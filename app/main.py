@@ -1,11 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import files, auth, system
+from app.api.routes import files, auth, system, media
 from contextlib import asynccontextmanager
 from app.db.main import init_db
 from app.core.auth import Auth
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from app.logger import logger
+from app.utils import is_first_boot, scan_and_insert, mark_first_boot_done
+from app.config import STORAGE_DIR
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -17,6 +19,10 @@ async def lifespan(app: FastAPI):
 
     if not success:
         raise RuntimeError("Failed to create initial user. Aborting startup.")
+    
+    if is_first_boot():
+        scan_and_insert(root_path=STORAGE_DIR)
+        mark_first_boot_done()
     
     yield
 
@@ -38,6 +44,7 @@ app.add_middleware(
 app.include_router(files.router, prefix="/api/v1/files", tags=["files"])
 app.include_router(system.router, prefix="/api/v1/system", tags=["system"])
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
+app.include_router(media.router, prefix="/api/v1/media", tags=["media"])
 
 @app.get("/api/v1/server-status")
 def server_status():
