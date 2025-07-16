@@ -238,6 +238,7 @@ class FileManager:
             This will delete file/folder at the given path. 
         """
 
+        #TODO - Handle the case when path is /, this will delete the entire root structure. TOP priority
         abs_path = FileManager.validate_path(path)
 
         if not os.path.exists(abs_path):
@@ -247,7 +248,7 @@ class FileManager:
             session = get_session()
 
             if os.path.isdir(abs_path):
-                dir_info = FileManager.get_file_info(abs_path)
+                dir_info = FileManager.get_file_info(abs_path, os.path.basename(abs_path))
 
                 dir = select(FileEntry).where(FileEntry.file_id == dir_info["id"])
                 if dir is None: 
@@ -257,7 +258,7 @@ class FileManager:
                 shutil.rmtree(abs_path)
                 session.commit()
             else:
-                file_info = FileManager.get_file_info(abs_path)
+                file_info = FileManager.get_file_info(abs_path, os.path.basename(abs_path))
 
                 file = select(FileEntry).where(FileEntry.file_id == file_info["id"])
                 if file is None: 
