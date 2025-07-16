@@ -10,6 +10,7 @@ services:
       - /srv:/srv
       - /root/scripts:/root/scripts:ro
       - /var/log/storagepod:/var/log/storagepod:ro
+      - ./data:/app/db/main.db # this is for testing, remove in prod
     restart: always
     networks:
       - app_network
