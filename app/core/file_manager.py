@@ -172,8 +172,6 @@ class FileManager:
 
             session.merge(file)
             session.commit()
-            
-            logger.info(f"Successfully added the folder in the db - {file.name}")
 
             return info
         except Exception as e:
@@ -246,12 +244,31 @@ class FileManager:
             raise HTTPException(status_code=404, detail="Path not found")
 
         try:
+            session = get_session()
+
             if os.path.isdir(abs_path):
+                dir_info = FileManager.get_file_info(abs_path)
+
+                dir = select(FileEntry).where(FileEntry.file_id == dir_info["id"])
+                if dir is None: 
+                    return
+                
+                session.delete(dir)
                 shutil.rmtree(abs_path)
+                session.commit()
             else:
+                file_info = FileManager.get_file_info(abs_path)
+
+                file = select(FileEntry).where(FileEntry.file_id == file_info["id"])
+                if file is None: 
+                    return
+                
+                session.delete(file)
                 os.remove(abs_path)
+                session.commit()
 
             return {"status": "completed"}
+        
         except Exception as e:
             logger.error(f'Exception occurred: {e}')
             raise HTTPException(status_code=500, detail="Failed to delete the given path")
