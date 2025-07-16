@@ -162,12 +162,12 @@ class FileManager:
             info = FileManager.get_file_info(abs_path, directory_name)
 
             file = FileEntry(
-                file_id=info.id,
-                path=info.path,
-                name=info.name,
+                file_id=info["id"],
+                path=info["path"],
+                name=info["name"],
                 type="folder",
-                size=info.size,
-                modified_at=info.modified_at
+                size=info["size"],
+                modified_at=info["modified_at"]
             )
 
             session.merge(file)
