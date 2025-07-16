@@ -251,7 +251,7 @@ class FileManager:
             if os.path.isdir(abs_path):
                 dir_info = FileManager.get_file_info(abs_path)
 
-                dir = select(FileEntry).where(FileEntry.file_id == dir_info["id"])
+                dir = session.exec(select(FileEntry).where(FileEntry.file_id == dir_info["id"])).first()
                 if dir is None: 
                     return
                 
@@ -261,7 +261,7 @@ class FileManager:
             else:
                 file_info = FileManager.get_file_info(abs_path)
 
-                file = select(FileEntry).where(FileEntry.file_id == file_info["id"])
+                file = session.exec(select(FileEntry).where(FileEntry.file_id == file_info["id"])).first()
                 if file is None: 
                     return
                 
