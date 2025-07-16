@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: fastapi_app
+    container_name: fastapi
     env_file:
       - .env
     volumes:
@@ -14,7 +14,6 @@ services:
     restart: always
     networks:
       - app_network
-
   nginx:
     image: nginx:latest
     ports:
@@ -28,6 +27,15 @@ services:
     restart: always
     networks:
       - app_network
+  jellyfin:
+    image: jellyfin/jellyfin
+    container_name: jellyfin
+    user: "0:0"
+    network_mode: host
+    restart: 'unless-stopped'
+    volumes:
+      - /srv/dev-disk-by-uuid-09698ee9-3b6f-4504-b43d-d7b527129ac9/Folder1:/media
+
 
 networks:
   app_network:
