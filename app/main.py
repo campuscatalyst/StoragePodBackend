@@ -27,7 +27,7 @@ async def lifespan(app: FastAPI):
     yield
 
     print("Shutting down: closing database engine...")  # SQLite doesn’t need manual close
-    
+
 # Create the FastAPI app
 app = FastAPI(title="Files Explorer API", lifespan=lifespan)
 # if the requested isn't from this then it will return error - 400
