@@ -171,6 +171,8 @@ class FileManager:
             )
 
             session.merge(file)
+            session.commit()
+            
             logger.info(f"Successfully added the folder in the db - {file.name}")
 
             return info
