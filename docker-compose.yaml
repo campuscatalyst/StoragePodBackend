@@ -35,8 +35,7 @@ services:
     restart: 'unless-stopped'
     volumes:
       - /srv/dev-disk-by-uuid-09698ee9-3b6f-4504-b43d-d7b527129ac9/Folder1:/media
-
-
+    
 networks:
   app_network:
     driver: bridge

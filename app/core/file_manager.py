@@ -87,7 +87,7 @@ class FileManager:
             raise HTTPException(status_code=500, detail=f"Error reading metrics: {str(e)}")
 
     @staticmethod
-    def get_file_info(path, file_name):
+    def get_file_info(path, file_name) -> dict:
         """
             Returns a dict of file metadata
         """
@@ -157,8 +157,23 @@ class FileManager:
             raise HTTPException(status_code=400, detail="Directory already exists")
         
         try:
+            session = get_session()
             os.makedirs(new_dir_path)
-            return FileManager.get_file_info(abs_path, directory_name)
+            info = FileManager.get_file_info(abs_path, directory_name)
+
+            file = FileEntry(
+                file_id=info.id,
+                path=info.path,
+                name=info.name,
+                type="folder",
+                size=info.size,
+                modified_at=info.modified_at
+            )
+
+            session.merge(file)
+            logger.info(f"Successfully added the folder in the db - {file.name}")
+
+            return info
         except Exception as e:
             logger.error(f'Exception occurred while creating a directory: {e}')
             raise HTTPException(status_code=500, detail="Failed to create directory")

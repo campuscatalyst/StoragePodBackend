@@ -5,6 +5,8 @@ from app.logger import logger
 from app.db.models import FileEntry, MediaEntry
 from datetime import datetime
 
+# sudo adduser --system --no-create-home --group --uid 1111 jellyfin
+
 def is_media_file(path: str) -> str | None:
     mime_type, _ = mimetypes.guess_type(path)
     if not mime_type:
