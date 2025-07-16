@@ -87,12 +87,12 @@ class FileManager:
             raise HTTPException(status_code=500, detail=f"Error reading metrics: {str(e)}")
 
     @staticmethod
-    def get_file_info(path, file_name) -> dict:
+    def get_file_info(full_path) -> dict:
         """
             Returns a dict of file metadata
         """
 
-        full_path = os.path.join(path, file_name)
+        file_name = os.path.basename(full_path)
         stats = os.stat(full_path)
 
         return {
@@ -117,7 +117,8 @@ class FileManager:
         items = []
         for item in os.listdir(abs_path):
             try:
-                file_info = FileManager.get_file_info(abs_path, item)
+                full_path = os.path.join(abs_path, item)
+                file_info = FileManager.get_file_info(full_path)
                 items.append(file_info)
             except Exception:
                 continue
@@ -159,7 +160,7 @@ class FileManager:
         try:
             session = get_session()
             os.makedirs(new_dir_path)
-            info = FileManager.get_file_info(abs_path, directory_name)
+            info = FileManager.get_file_info(new_dir_path)
 
             file = FileEntry(
                 file_id=info["id"],
@@ -248,7 +249,7 @@ class FileManager:
             session = get_session()
 
             if os.path.isdir(abs_path):
-                dir_info = FileManager.get_file_info(abs_path, os.path.basename(abs_path))
+                dir_info = FileManager.get_file_info(abs_path)
 
                 dir = select(FileEntry).where(FileEntry.file_id == dir_info["id"])
                 if dir is None: 
@@ -258,7 +259,7 @@ class FileManager:
                 shutil.rmtree(abs_path)
                 session.commit()
             else:
-                file_info = FileManager.get_file_info(abs_path, os.path.basename(abs_path))
+                file_info = FileManager.get_file_info(abs_path)
 
                 file = select(FileEntry).where(FileEntry.file_id == file_info["id"])
                 if file is None: 
