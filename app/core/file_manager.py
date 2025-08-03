@@ -391,6 +391,9 @@ class FileManager:
             recent = sorted(latest_by_path.values(), key=lambda e: e["timestamp"], reverse=True)
             return recent
 
+        except json.JSONDecodeError:
+            logger.error(f"RECENT_ACTIVITY_FILE exists but contains invalid JSON")
+            return []
         except FileNotFoundError:
             logger.error(f'Exception occurred: recent activity file not found')
             return []
