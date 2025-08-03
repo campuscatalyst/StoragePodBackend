@@ -147,7 +147,8 @@ class Auth:
             
             return dict({
                 "status_code": 200,
-                "token": token
+                "token": token,
+                "serial_number": Auth.get_serial_number()
             })
         else:
             # password is wrong.

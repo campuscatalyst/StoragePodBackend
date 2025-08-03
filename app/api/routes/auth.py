@@ -21,7 +21,7 @@ async def login(loginCredentials: LoginCredentials):
     return Auth.login(username=loginCredentials.username, password=loginCredentials.password)
 
 @router.post("/reset-password")
-async def login(loginCredentials: LoginCredentials):
+async def reset_password(loginCredentials: LoginCredentials):
     """
         reset the password for the given username
     """
