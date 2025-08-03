@@ -7,4 +7,4 @@ OnUnitActiveSec=2h
 Unit=media_metrics_scanner.service
 
 [Install]
-WantedBy=timers.target 
+WantedBy=timers.target

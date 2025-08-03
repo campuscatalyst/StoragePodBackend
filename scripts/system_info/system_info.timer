@@ -7,4 +7,4 @@ OnUnitActiveSec=5min
 Unit=system_info.service
 
 [Install]
-WantedBy=timers.target 
+WantedBy=timers.target
