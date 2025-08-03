@@ -1,0 +1,10 @@
+[Unit]
+Description=Run log cleanup daily
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+Unit=cleanup_recent_activity.service
+
+[Install]
+WantedBy=timers.target

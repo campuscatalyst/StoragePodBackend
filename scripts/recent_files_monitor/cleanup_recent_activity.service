@@ -1,0 +1,6 @@
+[Unit]
+Description=Cleanup StoragePod activity log (entries older than 7 days)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/storagepod_cleanup.sh
