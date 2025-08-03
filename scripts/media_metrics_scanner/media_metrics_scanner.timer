@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Media metrics scanner every 2 hours
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2h
+Unit=media_metrics_scanner.service
+
+[Install]
+WantedBy=timers.target 

@@ -1,0 +1,10 @@
+[Unit]
+Description=StoragePod Media Metrics Scanner, this will scan the folder1 and update the json file with number of docs, audio, videos etc.
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/media_metrics_scanner.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
