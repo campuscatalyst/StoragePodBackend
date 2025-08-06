@@ -29,37 +29,36 @@ class Auth:
         
     @staticmethod
     def create_initial_user():
-        try:
-            session = get_session()
+        with get_session() as session:
+            try:
+                existing_user = session.exec(select(User).where(User.username == "admin")).first()
+                if existing_user:
+                    print("Admin user already exists.")
+                    return True
+                
+                user = User(username="admin", password="admin")
+                session.add(user)
+                session.commit()
+                session.refresh(user)
 
-            existing_user = session.exec(select(User).where(User.username == "admin")).first()
-            if existing_user:
-                 print("Admin user already exists.")
-                 return True
+                return True
             
-            user = User(username="admin", password="admin")
-            session.add(user)
-            session.commit()
-            session.refresh(user)
-
-            return True
-        
-        except Exception as e:
-            logger.error(f'Exception occurred: {e}')
-            return False
+            except Exception as e:
+                logger.error(f'Exception occurred: {e}')
+                return False
 
     @staticmethod
     def get_all_users():
-        try:
-            session = get_session()
-            statement = select(User)
-            users = session.exec(statement=statement).all()
+        with get_session() as session:
+            try:
+                statement = select(User)
+                users = session.exec(statement=statement).all()
 
-            return users
-        
-        except Exception as e:
-            logger.error(f'Exception occurred: {e}')
-            return HTTPException(status_code=500, detail="Internal Error, unable to get all users")
+                return users
+            
+            except Exception as e:
+                logger.error(f'Exception occurred: {e}')
+                return HTTPException(status_code=500, detail="Internal Error, unable to get all users")
 
     @staticmethod
     def get_serial_number():
@@ -95,15 +94,15 @@ class Auth:
         """
             This will return the password of the given user. 
         """
-        try:
-            session = get_session()
-            statement = select(User).where(User.username == username)
-            user = session.exec(statement=statement).first()
+        with get_session() as session:
+            try:
+                statement = select(User).where(User.username == username)
+                user = session.exec(statement=statement).first()
 
-            return user.password
-        except:
-            logger.error("Error while getting the password")
-            return None
+                return user.password
+            except:
+                logger.error("Error while getting the password")
+                return None
         
     @staticmethod
     def login(username, password):
@@ -161,19 +160,19 @@ class Auth:
         
         # check if user is present if not return invalid request.
         # if present then hash the password and add it to the db along with the updated_at. 
-        try:
-            session = get_session()
-            user = session.exec(select(User).where(User.username == username)).first()
-            if not user:
-                raise HTTPException(status_code=404, detail="User not found")
-            
-            user.password = Auth.hash_password(password=password)
-            user.updated_at = datetime.utcnow()
+        with get_session() as session:
+            try:
+                user = session.exec(select(User).where(User.username == username)).first()
+                if not user:
+                    raise HTTPException(status_code=404, detail="User not found")
+                
+                user.password = Auth.hash_password(password=password)
+                user.updated_at = datetime.utcnow()
 
-            session.commit()
-            session.refresh(user)
+                session.commit()
+                session.refresh(user)
 
-            return HTTPException(status_code=201, detail="Password updated successfully")
-        except Exception as e:
-            logger.error(f'Exception occurred: {e}')
-            return HTTPException(status_code=503) 
+                return HTTPException(status_code=201, detail="Password updated successfully")
+            except Exception as e:
+                logger.error(f'Exception occurred: {e}')
+                return HTTPException(status_code=503) 

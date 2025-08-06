@@ -157,27 +157,27 @@ class FileManager:
         if os.path.exists(new_dir_path):
             raise HTTPException(status_code=400, detail="Directory already exists")
         
-        try:
-            session = get_session()
-            os.makedirs(new_dir_path)
-            info = FileManager.get_file_info(new_dir_path)
+        with get_session() as session:
+            try:
+                os.makedirs(new_dir_path)
+                info = FileManager.get_file_info(new_dir_path)
 
-            file = FileEntry(
-                file_id=info["id"],
-                path=info["path"],
-                name=info["name"],
-                type="folder",
-                size=info["size"],
-                modified_at=info["modified_at"]
-            )
+                file = FileEntry(
+                    file_id=info["id"],
+                    path=info["path"],
+                    name=info["name"],
+                    type="folder",
+                    size=info["size"],
+                    modified_at=info["modified_at"]
+                )
 
-            session.merge(file)
-            session.commit()
+                session.merge(file)
+                session.commit()
 
-            return info
-        except Exception as e:
-            logger.error(f'Exception occurred while creating a directory: {e}')
-            raise HTTPException(status_code=500, detail="Failed to create directory")
+                return info
+            except Exception as e:
+                logger.error(f'Exception occurred while creating a directory: {e}')
+                raise HTTPException(status_code=500, detail="Failed to create directory")
 
     @staticmethod
     async def handle_upload(request: Request, dest_dir, task_id, filename):
@@ -245,35 +245,34 @@ class FileManager:
         if not os.path.exists(abs_path):
             raise HTTPException(status_code=404, detail="Path not found")
 
-        try:
-            session = get_session()
+        with get_session() as session:
+            try:
+                if os.path.isdir(abs_path):
+                    dir_info = FileManager.get_file_info(abs_path)
 
-            if os.path.isdir(abs_path):
-                dir_info = FileManager.get_file_info(abs_path)
+                    dir = session.exec(select(FileEntry).where(FileEntry.file_id == dir_info["id"])).first()
+                    if dir is None: 
+                        return
+                    
+                    session.delete(dir)
+                    shutil.rmtree(abs_path)
+                    session.commit()
+                else:
+                    file_info = FileManager.get_file_info(abs_path)
 
-                dir = session.exec(select(FileEntry).where(FileEntry.file_id == dir_info["id"])).first()
-                if dir is None: 
-                    return
-                
-                session.delete(dir)
-                shutil.rmtree(abs_path)
-                session.commit()
-            else:
-                file_info = FileManager.get_file_info(abs_path)
+                    file = session.exec(select(FileEntry).where(FileEntry.file_id == file_info["id"])).first()
+                    if file is None: 
+                        return
+                    
+                    session.delete(file)
+                    os.remove(abs_path)
+                    session.commit()
 
-                file = session.exec(select(FileEntry).where(FileEntry.file_id == file_info["id"])).first()
-                if file is None: 
-                    return
-                
-                session.delete(file)
-                os.remove(abs_path)
-                session.commit()
-
-            return {"status": "completed"}
-        
-        except Exception as e:
-            logger.error(f'Exception occurred: {e}')
-            raise HTTPException(status_code=500, detail="Failed to delete the given path")
+                return {"status": "completed"}
+            
+            except Exception as e:
+                logger.error(f'Exception occurred: {e}')
+                raise HTTPException(status_code=500, detail="Failed to delete the given path")
          
     @staticmethod
     def download(path, inline = False):
@@ -412,7 +411,7 @@ class FileManager:
 
         if not os.path.exists(abs_path):
             raise HTTPException(status_code=404, detail="Path not found")
-
+    
         if not FileManager.validate_itemname(new_name):
             raise HTTPException(status_code=400, detail="Invalid file/folder name")
         
@@ -420,6 +419,9 @@ class FileManager:
 
         folder = os.path.dirname(abs_path)
         new_path = os.path.join(folder, new_name)
+
+        if os.path.exists(new_path):
+            raise HTTPException(status_code=409, detail="File or folder with the new name already exists")
 
         try:
             shutil.move(abs_path, new_path)
@@ -525,32 +527,34 @@ class FileManager:
         order: str | None = None,
         limit: int | None = None
     ):
-        try:
-            session = get_session()
+        with get_session() as session:
+            try:
+                if session is None:
+                    logger.error(f'Exception occurred while accessing the session: no session found')
+                    raise HTTPException(status_code=500, detail="Internal Error")
+                
+                # adding the default values
+                sort = sort or "modified_at"
+                order = order or "desc"
+                limit = limit or 50
 
-            if session is None:
-                logger.error(f'Exception occurred while accessing the session: no session found')
-                raise HTTPException(status_code=500, detail="Internal Error")
-            
-            # adding the default values
-            sort = sort or "modified_at"
-            order = order or "desc"
-            limit = limit or 50
+                if not q or len(q.strip()) < 2:
+                    return []
 
-            query = select(FileEntry)
-            if q:
-                query = query.where(FileEntry.name.contains(q))
-            
-            if type in ["file", "folder"]:
-                query = query.where(FileEntry.type == type)
-            
-            sort_column = getattr(FileEntry, sort, FileEntry.modified_at)
-            sort_order = sort_column.desc() if order == "desc" else sort_column.asc()
+                query = select(FileEntry)
+                if q:
+                    query = query.where(FileEntry.name.contains(q))
+                
+                if type in ["file", "folder"]:
+                    query = query.where(FileEntry.type == type)
+                
+                sort_column = getattr(FileEntry, sort, FileEntry.modified_at)
+                sort_order = sort_column.desc() if order == "desc" else sort_column.asc()
 
-            query = query.order_by(sort_order).limit(limit)
-            results = session.exec(query).all()
+                query = query.order_by(sort_order).limit(limit)
+                results = session.exec(query).all()
 
-            return results
-        except Exception as e:
-            logger.error(f'Exception occurred while searching: {e}')
-            raise HTTPException(status_code=500, detail="Error while searching")
+                return results
+            except Exception as e:
+                logger.error(f'Exception occurred while searching: {e}')
+                raise HTTPException(status_code=500, detail="Error while searching")

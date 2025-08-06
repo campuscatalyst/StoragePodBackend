@@ -117,7 +117,7 @@ def move_item(copy_payload: CopyItemRequest):
 
 @router.get("/search")
 def search(
-    query: str = Query(description="The keyword that the user wants to search"),
+    query: str = Query(..., description="The keyword that the user wants to search"),
     type: str | None  = Query(default=None, description="To search file/folder"),
     sort: str | None = Query(default=None, description="The field that user wants to sort"),
     order: str | None = Query(default=None, description="asc/dsc sort the result"),

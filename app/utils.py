@@ -28,45 +28,45 @@ def scan_and_insert(root_path: str):
     """
         NOTE - Make sure that this function isn't executed unnecessarily as this may consume lot of resources and time to iterate everything and add to the db. 
     """
-    try:
-        session = get_session()
-        for dirpath, dirnames, filenames in os.walk(root_path):
-            for dirname in dirnames:
-                full_path = os.path.join(dirpath, dirname)
-                rel_path = os.path.relpath(full_path, root_path)
+    with get_session() as session:
+        try:
+            for dirpath, dirnames, filenames in os.walk(root_path):
+                for dirname in dirnames:
+                    full_path = os.path.join(dirpath, dirname)
+                    rel_path = os.path.relpath(full_path, root_path)
 
-                stat = os.stat(full_path)
+                    stat = os.stat(full_path)
 
-                entry = FileEntry(
-                    file_id=f"{stat.st_dev}-{stat.st_ino}",
-                    path=rel_path,
-                    name=dirname,
-                    type="folder",
-                    size=stat.st_size,
-                    modified_at=datetime.fromtimestamp(stat.st_mtime)
-                )
+                    entry = FileEntry(
+                        file_id=f"{stat.st_dev}-{stat.st_ino}",
+                        path=rel_path,
+                        name=dirname,
+                        type="folder",
+                        size=stat.st_size,
+                        modified_at=datetime.fromtimestamp(stat.st_mtime)
+                    )
 
-                session.merge(entry)
+                    session.merge(entry)
 
-            for name in filenames:
-                full_path = os.path.join(dirpath, name)
-                rel_path = os.path.relpath(full_path, root_path)
+                for name in filenames:
+                    full_path = os.path.join(dirpath, name)
+                    rel_path = os.path.relpath(full_path, root_path)
 
-                stat = os.stat(full_path)
+                    stat = os.stat(full_path)
 
-                entry = FileEntry(
-                    file_id=f"{stat.st_dev}-{stat.st_ino}",
-                    path=rel_path,
-                    name=name,
-                    type="file",
-                    size=stat.st_size,
-                    modified_at=datetime.fromtimestamp(stat.st_mtime)
-                )
+                    entry = FileEntry(
+                        file_id=f"{stat.st_dev}-{stat.st_ino}",
+                        path=rel_path,
+                        name=name,
+                        type="file",
+                        size=stat.st_size,
+                        modified_at=datetime.fromtimestamp(stat.st_mtime)
+                    )
 
-                session.merge(entry)
+                    session.merge(entry)
 
-        # once all the changes are added, then we will commit this. 
-        session.commit()
-        logger.info("Successfully scanned the drive and inserted the data into db")
-    except Exception as e:
-        logger.error(f"Error while scanning the folder to insert into db - {e}")
+            # once all the changes are added, then we will commit this. 
+            session.commit()
+            logger.info("Successfully scanned the drive and inserted the data into db")
+        except Exception as e:
+            logger.error(f"Error while scanning the folder to insert into db - {e}")
