@@ -29,7 +29,7 @@ class TrackingFileTarget(FileTarget):
     def on_start(self):
         """Called when file upload starts"""
         super().on_start()
-        asyncio.create_task(self.update_progress_wrapper(0, 0))
+        #asyncio.create_task(self.update_progress_wrapper(0, 0))
     
     def on_data_received(self, chunk: bytes):
         """Called for each chunk - optimized for large files"""
@@ -39,11 +39,11 @@ class TrackingFileTarget(FileTarget):
         # Only update progress every 16MB to avoid performance overhead
         if self.bytes_written - self.last_progress_update >= self.progress_threshold:
             self.last_progress_update = self.bytes_written
-            asyncio.create_task(self.update_progress_wrapper(self.bytes_written, self.bytes_written))
+            #asyncio.create_task(self.update_progress_wrapper(self.bytes_written, self.bytes_written))
     
     def on_finish(self):
         super().on_finish()
-        asyncio.create_task(self.update_progress_wrapper(self.bytes_written, self.bytes_written))
+        #asyncio.create_task(self.update_progress_wrapper(self.bytes_written, self.bytes_written))
 
 class SingleFileStreamingParser:
     """Custom parser to handle multiple large files in streaming fashion"""
