@@ -17,6 +17,7 @@ from app.logger import logger
 from app.db.main import get_session
 from app.db.models import FileEntry
 from sqlmodel import select
+from starlette.requests import ClientDisconnect
 
 progress_store: Dict[str, int] = {}
 upload_tasks: Dict[str, Dict] = {}
@@ -205,6 +206,9 @@ class FileManager:
 
                 return {"uploaded_file": saved_filename}
 
+            except ClientDisconnect:
+                with get_session() as session:
+                    await fail_task(session, task_id, error="Client disconnected")
             except Exception as e:
                 with get_session() as session:
                     await fail_task(session, task_id, str(e))

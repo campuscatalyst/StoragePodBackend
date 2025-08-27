@@ -88,7 +88,7 @@ class SingleFileStreamingParser:
                 self.parser.data_received(chunk)
                 
         except ClientDisconnect:
-            raise Exception("Client disconnected during file upload")
+            raise
         except Exception as e:
             raise Exception(f"Upload parsing failed: {str(e)}")
         
