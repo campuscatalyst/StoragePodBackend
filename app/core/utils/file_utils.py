@@ -2,7 +2,7 @@ import asyncio, os
 from streaming_form_data.targets import FileTarget
 from app.core.utils.upload_tasks import update_progress
 from streaming_form_data import StreamingFormDataParser
-from typing import Dict, List, Optional
+from app.db.main import get_session
 import re
 from fastapi import Request
 from starlette.requests import ClientDisconnect
@@ -21,11 +21,15 @@ class TrackingFileTarget(FileTarget):
         self.bytes_written = 0 # bytes written to the dest filepath
         self.last_progress_update = 0
         self.progress_threshold = 1024 * 1024 * 16  # Update every 16MB to avoid too frequent updates
+
+    async def update_progress_wrapper(self, written, total):
+        with get_session() as session:
+            await update_progress(session, self.task_id, written, total)
     
     def on_start(self):
         """Called when file upload starts"""
         super().on_start()
-        asyncio.create_task(update_progress(self.task_id, 0, 0))
+        asyncio.create_task(self.update_progress_wrapper(0, 0))
     
     def on_data_received(self, chunk: bytes):
         """Called for each chunk - optimized for large files"""
@@ -35,11 +39,11 @@ class TrackingFileTarget(FileTarget):
         # Only update progress every 16MB to avoid performance overhead
         if self.bytes_written - self.last_progress_update >= self.progress_threshold:
             self.last_progress_update = self.bytes_written
-            asyncio.create_task(update_progress(self.task_id, self.bytes_written, self.bytes_written))
+            asyncio.create_task(self.update_progress_wrapper(self.bytes_written, self.bytes_written))
     
     def on_finish(self):
         super().on_finish()
-        asyncio.create_task(update_progress(self.task_id, self.bytes_written, self.bytes_written))
+        asyncio.create_task(self.update_progress_wrapper(self.bytes_written, self.bytes_written))
 
 class SingleFileStreamingParser:
     """Custom parser to handle multiple large files in streaming fashion"""

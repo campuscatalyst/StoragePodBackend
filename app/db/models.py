@@ -14,6 +14,16 @@ class User(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
 
+class UploadTask(SQLModel, table=True):
+    task_id: str = Field(primary_key=True, index=True)
+    filename: str = Field(index=True)
+    status: str = Field(default="uploading", index=True)   # uploading, done, failed
+    written: int = Field(default=0)
+    total: int = Field(default=0)
+    error: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime)
+    updated_at: datetime = Field(default_factory=datetime)
+
 class FileEntry(SQLModel, table=True):
     file_id: str = Field(primary_key=True)
     name: str = Field(index=True)
@@ -32,6 +42,8 @@ class MediaEntry(SQLModel, table=True):
     folder_path: str # Parent folder path
     type: str  # 'image' or 'video'
     size: Optional[int] = 0
+    width: Optional[float]
+    height: Optional[float]
     modified_at: datetime
 
     # Shared metadata

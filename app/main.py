@@ -30,6 +30,7 @@ async def lifespan(app: FastAPI):
 
 # Create the FastAPI app
 app = FastAPI(title="Files Explorer API", lifespan=lifespan)
+
 # if the requested isn't from this then it will return error - 400
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*.campuscatalyst.info", "*.local", "localhost", "127.0.0.1"])
 

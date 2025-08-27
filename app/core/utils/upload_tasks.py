@@ -1,44 +1,53 @@
 import asyncio
 import time
+from sqlmodel import Session, select
+from app.db.models import UploadTask
+from datetime import datetime, timedelta
 
-upload_tasks = {}
-task_timestamps = {}
-GLOBAL_LOCK = asyncio.Lock()
-TASK_EXPIRY_SECONDS = 120  # Auto-clean after 2 min
+UPLOAD_SEMAPHORE = asyncio.Semaphore(3)  # max 3 parallel uploads
 
-def is_upload_in_progress():
-    # this will check if there is any task with status as uploading in upload_tasks. if so it will return true else false.
-    return any(task.get("status") == "uploading" for task in upload_tasks.values())
+async def init_task(session: Session, task_id: str, filename: str):
+    task = UploadTask(task_id=task_id, filename=filename, status="uploading")
+    session.add(task)
+    session.commit()
 
-async def init_task(task_id, filename):
-    upload_tasks[task_id] = {
-        "status": "uploading",
-        "filename": filename,
-        "progress": {"written": 0, "total": 0}
-    }
+async def update_progress(session: Session, task_id: str, written: int, total: int):
+    task = session.get(UploadTask, task_id)
+    if task and task.status == "uploading":
+        task.written = written
+        task.total = total
+        task.updated_at = datetime.now()
+        session.add(task)
+        session.commit()
 
-    task_timestamps[task_id] = time.time()
+async def complete_task(session: Session, task_id: str):
+    task = session.get(UploadTask, task_id)
+    if task:
+        task.status = "done"
+        task.updated_at = datetime.now()
+        session.add(task)
+        session.commit()
 
-async def update_progress(task_id, written, total):
-    task = upload_tasks.get(task_id)
-    if task and task["status"] == "uploading":
-        task["progress"]["written"] = written
-        task["progress"]["total"] = total
+async def fail_task(session: Session, task_id: str, error: str):
+    task = session.get(UploadTask, task_id)
+    if task:
+        task.status = "failed"
+        task.error = error
+        task.updated_at = datetime.utcnow()
+        session.add(task)
+        session.commit()
 
-async def complete_task(task_id):
-    if task_id in upload_tasks:
-        upload_tasks[task_id]["status"] = "done"
+def get_task_status(session: Session, task_id: str) -> dict:
+    task = session.get(UploadTask, task_id)
+    if not task:
+        return {"status": "not_found"}
+    return task.model_dump()
 
-async def fail_task(task_id, error):
-    if task_id in upload_tasks:
-        upload_tasks[task_id]["status"] = "failed"
-        upload_tasks[task_id]["error"] = str(error)
+async def cleanup_old_uploads(session: Session):
+    old_tasks = session.exec(
+        select(UploadTask).where(UploadTask.created_at < datetime.now() - timedelta(days=1))
+    ).all()
 
-def get_task_status(task_id):
-    now = time.time()
-    if task_id in task_timestamps and (now - task_timestamps[task_id] > TASK_EXPIRY_SECONDS):
-        upload_tasks.pop(task_id, None)
-        task_timestamps.pop(task_id, None)
-        return {"status": "expired"}
-    
-    return upload_tasks.get(task_id, {"status": "not_found"})
+    for task in old_tasks:
+        session.delete(task)
+    session.commit()

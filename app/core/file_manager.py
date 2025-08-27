@@ -10,7 +10,7 @@ import json
 import uuid
 import zipfile
 from typing import Dict
-from app.core.utils.upload_tasks import fail_task, GLOBAL_LOCK, init_task, complete_task, get_task_status
+from app.core.utils.upload_tasks import UPLOAD_SEMAPHORE, fail_task, init_task, complete_task, get_task_status
 from app.core.utils.file_utils import TrackingFileTarget, SingleFileStreamingParser
 from streaming_form_data import StreamingFormDataParser
 from app.logger import logger
@@ -182,37 +182,40 @@ class FileManager:
     @staticmethod
     async def handle_upload(request: Request, dest_dir, task_id, filename):
         """Handle multiple large file uploads in streaming fashion"""
+        async with UPLOAD_SEMAPHORE:
+            # only 3 uploads at a time can enter here
+            try:
+                content_type = request.headers.get("Content-Type", "")
+                if not content_type or not content_type.startswith("multipart/form-data"):
+                    raise ValueError("Content-Type must be multipart/form-data for file uploads")
 
-        try:
-            content_type = request.headers.get("Content-Type", "")
-            if not content_type or not content_type.startswith("multipart/form-data"):
-                raise ValueError("Content-Type must be multipart/form-data for file uploads")
+                parser = StreamingFormDataParser(headers=request.headers)
 
-            parser = StreamingFormDataParser(headers=request.headers)
-            await init_task(task_id, filename=filename)
-            parser = SingleFileStreamingParser(request_headers=request.headers, dest_dir=dest_dir, task_id=task_id, filename=filename)
-            saved_filename = await parser.parse_and_save_files(request)
+                with get_session() as session:
+                    await init_task(session, task_id, filename=filename)
 
-            if not saved_filename:
-                raise ValueError("No file was uploaded")
-            
-            await complete_task(task_id)
+                parser = SingleFileStreamingParser(request_headers=request.headers, dest_dir=dest_dir, task_id=task_id, filename=filename)
+                saved_filename = await parser.parse_and_save_files(request)
 
-            return {"uploaded_file": saved_filename}
+                if not saved_filename:
+                    raise ValueError("No file was uploaded")
+                
+                with get_session() as session:
+                    await complete_task(session, task_id)
 
-        except Exception as e:
-            await fail_task(task_id, str(e))
-            raise
+                return {"uploaded_file": saved_filename}
+
+            except Exception as e:
+                with get_session() as session:
+                    await fail_task(session, task_id, str(e))
+                    raise
     
     @staticmethod
-    async def upload_files_wrapper(request: Request, background_tasks: BackgroundTasks, path: str, filename: str):
+    async def start_upload(request: Request, background_tasks: BackgroundTasks, path: str, filename: str):
         """
             path - destination path
             file - the file that needs to be uploaded. 
         """
-
-        if GLOBAL_LOCK.locked():
-            return HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Another upload is in progress") 
 
         abs_path = FileManager.validate_path(path)
 
@@ -221,17 +224,23 @@ class FileManager:
         
         task_id = str(uuid.uuid4())
 
-        try:
-            result = await FileManager.handle_upload(request=request, dest_dir=abs_path, task_id=task_id, filename=filename)
-            return {"task_id": task_id, "result": result}
-        except Exception as e:
-            await fail_task(task_id, str(e))
-            raise HTTPException(status_code=500, detail=str(e))
+        async def run_upload():
+            try:
+                await FileManager.handle_upload(request=request, dest_dir=abs_path, task_id=task_id, filename=filename)
+            except Exception as e:
+                with get_session() as session:
+                    await fail_task(session, task_id, str(e))
+                    raise
+    
+        asyncio.create_task(run_upload())
+        return {"task_id": task_id, "status": "started"}
+
     
     @staticmethod
     def get_upload_progress(task_id):
-        task = get_task_status(task_id=task_id)
-        return task
+        with get_session() as session:
+            task = get_task_status(session, task_id=task_id)
+            return task
 
     @staticmethod
     async def delete_item(path):
