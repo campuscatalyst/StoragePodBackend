@@ -21,8 +21,8 @@ class UploadTask(SQLModel, table=True):
     written: int = Field(default=0)
     total: int = Field(default=0)
     error: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime)
-    updated_at: datetime = Field(default_factory=datetime)
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
 
 class FileEntry(SQLModel, table=True):
     file_id: str = Field(primary_key=True)
