@@ -4,7 +4,7 @@ from app.db.main import get_session
 from app.db.models import User
 from sqlmodel import select
 from passlib.context import CryptContext
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.config import settings
 from app.logger import logger
 
@@ -16,7 +16,7 @@ class Auth:
     def create_access_token(data: dict, expires_delta = None):
         try:
             to_encode = data.copy()
-            expire = datetime.utcnow() + (expires_delta or timedelta(days=7))
+            expire = datetime.now(timezone.utc) + (expires_delta or timedelta(days=7))
            
             to_encode.update({ "exp": expire })
 
@@ -167,7 +167,7 @@ class Auth:
                     raise HTTPException(status_code=404, detail="User not found")
                 
                 user.password = Auth.hash_password(password=password)
-                user.updated_at = datetime.utcnow()
+                user.updated_at = datetime.now(timezone.utc)
 
                 session.commit()
                 session.refresh(user)

@@ -1,6 +1,6 @@
 import os, asyncio
 import shutil
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import HTTPException, BackgroundTasks, status, Request
 from fastapi.responses import FileResponse, JSONResponse
 from app.config import STORAGE_DIR, METRICS_FILE, RECENT_ACTIVITY_FILE
@@ -68,7 +68,7 @@ class FileManager:
                     "videos": 0,
                     "audio": 0,
                     "documents": 0,
-                    "scan_time":  datetime.now()
+                    "scan_time":  datetime.now(timezone.utc)
                 }
             
             with open(METRICS_FILE, "r") as f:
@@ -79,7 +79,7 @@ class FileManager:
                 "videos": data.get("media_counts", {}).get("videos", 0),
                 "audio": data.get("media_counts", {}).get("audio", 0),
                 "documents": data.get("media_counts", {}).get("documents", 0),
-                "scan_time": data.get("scan_info", {}).get("date", datetime.now())
+                "scan_time": data.get("scan_info", {}).get("date", datetime.now(timezone.utc))
             }
 
         except Exception as e:

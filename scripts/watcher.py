@@ -1,6 +1,6 @@
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import time
 import json
 import os
@@ -18,7 +18,7 @@ class ChangeLogger(FileSystemEventHandler):
             return
 
         file_path = event.src_path
-        timestamp = datetime.now().isoformat()
+        timestamp = datetime.now(timezone.utc).isoformat()
 
         log_entry = {
             "path": file_path,
@@ -39,7 +39,7 @@ class ChangeLogger(FileSystemEventHandler):
             data.append(log_entry)    
 
             data = [
-                entry for entry in data if datetime.fromisoformat(entry["timestamp"]) >= datetime.now() - timedelta(days=7)
+                entry for entry in data if datetime.fromisoformat(entry["timestamp"]) >= datetime.now(timezone.utc) - timedelta(days=7)
             ]
 
             with open(LOG_FILE, "w") as f:
