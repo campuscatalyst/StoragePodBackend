@@ -80,6 +80,7 @@ class SingleFileStreamingParser:
     
     async def parse_and_save_files(self, request: Request):
         """Parse multipart stream and save files, returning list of saved filenames"""
+        print("HEADERS:", dict(request.headers))
 
         self.parser.register('file', self._create_file_target(filename=self.filename))
 
