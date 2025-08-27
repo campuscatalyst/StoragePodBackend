@@ -87,7 +87,8 @@ class SingleFileStreamingParser:
         try:
             async for chunk in request.stream():
                 self.parser.data_received(chunk)
-                
+
+            self.parser.finalize()    
         except ClientDisconnect:
             raise
         except Exception as e:
