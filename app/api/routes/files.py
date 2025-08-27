@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, HTTPException, Query, UploadFile, Form, Body, Depends, BackgroundTasks, Request
+from fastapi import APIRouter, HTTPException, Query, UploadFile, Form, Body, Depends, BackgroundTasks, Request, File
 from app.core.file_manager import FileManager
 from app.api.routes.models import CreateFolderPayload, RenameItemRequest, MoveItemRequest, CopyItemRequest
 from app.core.utils import auth_utils
@@ -9,6 +9,11 @@ import json
 # router = APIRouter(dependencies=[Depends(auth_utils.verify_token)])
 
 router = APIRouter()
+
+@router.post("/upload-test/")
+async def upload_test(file: UploadFile = File(...)):
+    contents = await file.read()  # read entire file into memory
+    return {"filename": file.filename, "size": len(contents)}
 
 @router.get("/")
 async def list_files(path = Query("", description="Path of the folder to be listed")):
