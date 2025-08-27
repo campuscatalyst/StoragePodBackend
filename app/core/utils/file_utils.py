@@ -82,7 +82,7 @@ class SingleFileStreamingParser:
         """Parse multipart stream and save files, returning list of saved filenames"""
         print("HEADERS:", dict(request.headers))
 
-        self.parser.register('file', self._create_file_target(filename=self.filename))
+        self.parser.register('file', TrackingFileTarget(file_path="/tmp/pavan.py", task_id=self.task_id, filename="sample.py"))
 
         try:
             async for chunk in request.stream():
