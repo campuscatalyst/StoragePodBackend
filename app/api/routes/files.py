@@ -3,7 +3,10 @@ from fastapi import APIRouter, HTTPException, Query, UploadFile, Form, Body, Dep
 from app.core.file_manager import FileManager
 from app.api.routes.models import CreateFolderPayload, RenameItemRequest, MoveItemRequest, CopyItemRequest
 from app.core.utils import auth_utils
-import json
+import os
+from streaming_form_data import StreamingFormDataParser
+from streaming_form_data.targets import FileTarget
+from starlette.requests import ClientDisconnect
 
 
 # router = APIRouter(dependencies=[Depends(auth_utils.verify_token)])
@@ -11,9 +14,18 @@ import json
 router = APIRouter()
 
 @router.post("/upload-test/")
-async def upload_test(file: UploadFile = File(...)):
-    contents = await file.read()  # read entire file into memory
-    return {"filename": file.filename, "size": len(contents)}
+async def upload_test(request: Request):
+    parser = StreamingFormDataParser(headers=request.headers)
+    target = FileTarget("/tmp/sample.py")
+    parser.register("file", target)
+
+    try:
+        async for chunk in request.stream():
+            parser.data_received(chunk)
+    except ClientDisconnect:
+        return {"error": "Client disconnected"}
+
+    return {"filename": target.filename, "size": os.path.getsize("/tmp/sample.py")}
 
 @router.get("/")
 async def list_files(path = Query("", description="Path of the folder to be listed")):
