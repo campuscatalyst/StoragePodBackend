@@ -11,7 +11,7 @@ import uuid
 import zipfile
 from typing import Dict
 from app.core.utils.upload_tasks import UPLOAD_SEMAPHORE, fail_task, init_task, complete_task, get_task_status
-from app.core.utils.file_utils import TrackingFileTarget, SingleFileStreamingParser
+from app.core.utils.file_utils import TrackingFileTarget, SingleFileStreamingParser, ProgressFileTarget
 from streaming_form_data import StreamingFormDataParser
 from streaming_form_data.targets import FileTarget
 from app.logger import logger
@@ -229,9 +229,12 @@ class FileManager:
         
         if not FileManager.validate_itemname(filename):
             raise HTTPException(status_code=400, detail="Invalid filename provided")
+        
+        task_id = str(uuid.uuid4())
 
         file_path = os.path.join(abs_path, filename)
-        file_target = FileTarget(file_path)
+        #file_target = FileTarget(file_path)
+        file_target = ProgressFileTarget(file_path, task_id, progress_store)
         
         parser = StreamingFormDataParser(headers=request.headers)
         parser.register("file", file_target)
@@ -249,10 +252,7 @@ class FileManager:
         if not file_target.multipart_filename:
             raise HTTPException(status_code=422, detail="File field is missing in form-data")
 
-        return {
-            "message": f"Successfully uploaded {filename}",
-            "path": file_path,
-        }
+        return {"upload_id": task_id, "filename": filename, "path": file_path}
 
     @staticmethod
     async def start_upload(request: Request, background_tasks: BackgroundTasks, path: str, filename: str):
@@ -281,10 +281,15 @@ class FileManager:
 
     
     @staticmethod
-    def get_upload_progress(task_id):
-        with get_session() as session:
-            task = get_task_status(session, task_id=task_id)
-            return task
+    def get_upload_progress(upload_id):
+        # with get_session() as session:
+        #     task = get_task_status(session, task_id=task_id)
+        #     return task
+
+        bytes_received = progress_store.get(upload_id, None)
+        if bytes_received is None:
+            return {"upload_id": upload_id, "status": "completed or not found"}
+        return {"upload_id": upload_id, "bytes_received": bytes_received}
 
     @staticmethod
     async def delete_item(path):

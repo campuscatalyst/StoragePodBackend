@@ -96,4 +96,15 @@ class SingleFileStreamingParser:
         
         return self.filename
 
+class ProgressFileTarget(FileTarget):
+    def __init__(self, file_path, upload_id, progress_store):
+        super().__init__(file_path)
+        self.upload_id = upload_id
+        self.progress_store = progress_store
+        self.bytes_written = 0
 
+    def on_data_received(self, chunk):
+        super().on_data_received(chunk)
+        self.bytes_written += len(chunk)
+        # Save progress bytes atomically in shared store
+        self.progress_store[self.upload_id] = self.bytes_written
