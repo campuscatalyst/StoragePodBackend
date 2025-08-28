@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import files, auth, system, media
+from app.api.routes import files, auth, system, media, tus_server
 from contextlib import asynccontextmanager
 from app.db.main import init_db
 from app.core.auth import Auth
@@ -40,9 +40,20 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=[
+        "Location",
+        "Tus-Resumable",
+        "Tus-Version",
+        "Tus-Extension",
+        "Tus-Max-Size",
+        "Upload-Offset",
+        "Upload-Length",
+        "Upload-Expires",
+    ],
 )
 
 app.include_router(files.router, prefix="/api/v1/files", tags=["files"])
+app.include_router(tus_server.router, prefix="/api/v1/uploads", tags=["tus"])
 app.include_router(system.router, prefix="/api/v1/system", tags=["system"])
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(media.router, prefix="/api/v1/media", tags=["media"])

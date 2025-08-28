@@ -3,54 +3,10 @@ from fastapi import APIRouter, HTTPException, Query, UploadFile, Form, Body, Dep
 from app.core.file_manager import FileManager
 from app.api.routes.models import CreateFolderPayload, RenameItemRequest, MoveItemRequest, CopyItemRequest
 from app.core.utils import auth_utils
-import os
-from streaming_form_data import StreamingFormDataParser
-from streaming_form_data.targets import FileTarget
-from starlette.requests import ClientDisconnect
-
 
 # router = APIRouter(dependencies=[Depends(auth_utils.verify_token)])
 
 router = APIRouter()
-
-@router.post("/upload-test/")
-async def upload_test(request: Request):
-    parser = StreamingFormDataParser(headers=request.headers)
-    target = FileTarget("/tmp/sample.py")
-    parser.register("file", target)
-
-    try:
-        async for chunk in request.stream():
-            parser.data_received(chunk)
-    except ClientDisconnect:
-        return {"error": "Client disconnected"}
-
-    return {"filename": target.filename, "size": os.path.getsize("/tmp/sample.py")}
-
-@router.post("/upload-test/sample")
-async def upload_test(request: Request):
-    filename = request.headers.get('filename')
-    if not filename:
-        raise HTTPException(status_code=422, detail='Filename header is missing')
-    
-    file_path = os.path.join('/tmp/sample.py')
-    file_target = FileTarget(file_path)
-
-    parser = StreamingFormDataParser(headers=request.headers)
-    parser.register('file', file_target)
-
-    try:
-        async for chunk in request.stream():
-            parser.data_received(chunk)
-    except ClientDisconnect:
-        raise HTTPException(status_code=499, detail="Client Disconnected")
-    except Exception:
-        raise HTTPException(status_code=500, detail="Error uploading file")
-
-    if not file_target.multipart_filename:
-        raise HTTPException(status_code=422, detail="File is missing")
-
-    return {"message": f"Successfully uploaded {filename}"}
 
 @router.get("/")
 async def list_files(path = Query("", description="Path of the folder to be listed")):
@@ -68,7 +24,7 @@ async def get_metrics():
 
     return FileManager.get_metrics()
 
-@router.post("/")
+#@router.post("/")
 async def upload_file(request: Request, path = Query(..., description=""), filename = Query(..., description="")):
     """
         Upload a file to the specified directory.
@@ -77,7 +33,7 @@ async def upload_file(request: Request, path = Query(..., description=""), filen
 
     return await FileManager.new_start_upload(request, path=path, filename=filename)
 
-@router.get("/upload-progress")
+#@router.get("/upload-progress")
 async def get_upload_progress(task_id = Query("", description="task id to be monitored")):
     """
        To get progress of the upload folder

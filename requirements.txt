@@ -7,3 +7,4 @@ passlib
 sqlmodel
 python-dotenv
 pydantic-settings
+tuspyserver
