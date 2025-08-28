@@ -13,6 +13,7 @@ from typing import Dict
 from app.core.utils.upload_tasks import UPLOAD_SEMAPHORE, fail_task, init_task, complete_task, get_task_status
 from app.core.utils.file_utils import TrackingFileTarget, SingleFileStreamingParser
 from streaming_form_data import StreamingFormDataParser
+from streaming_form_data.targets import FileTarget
 from app.logger import logger
 from app.db.main import get_session
 from app.db.models import FileEntry
@@ -214,6 +215,47 @@ class FileManager:
                     await fail_task(session, task_id, str(e))
                     raise
     
+    @staticmethod
+    async def new_start_upload(request: Request, path: str, filename: str):
+        """
+            path - destination path
+            file - the file that needs to be uploaded. 
+        """
+
+        abs_path = FileManager.validate_path(path)
+
+        if not os.path.isdir(abs_path):
+            raise HTTPException(status_code=400, detail="Destination is not a directory")
+        
+        if not FileManager.validate_itemname(filename):
+            raise HTTPException(status_code=400, detail="Invalid filename provided")
+
+        file_path = os.path.join(abs_path, filename)
+        file_target = FileTarget(file_path)
+        
+        parser = StreamingFormDataParser(headers=request.headers)
+        parser.register("file", file_target)
+
+        try:
+            async for chunk in request.stream():
+                parser.data_received(chunk)
+
+            parser.finalize()
+
+        except ClientDisconnect:
+            raise HTTPException(status_code=499, detail="Client Disconnected")
+        
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error uploading file: {str(e)}")
+
+        if not file_target.multipart_filename:
+            raise HTTPException(status_code=422, detail="File field is missing in form-data")
+
+        return {
+            "message": f"Successfully uploaded {filename}",
+            "path": file_path,
+        }
+
     @staticmethod
     async def start_upload(request: Request, background_tasks: BackgroundTasks, path: str, filename: str):
         """

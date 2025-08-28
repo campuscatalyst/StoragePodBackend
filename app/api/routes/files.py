@@ -69,13 +69,13 @@ async def get_metrics():
     return FileManager.get_metrics()
 
 @router.post("/")
-async def upload_file(request: Request,background_tasks: BackgroundTasks, path = Query("", description=""), filename = Query("", description="")):
+async def upload_file(request: Request, path = Query(..., description=""), filename = Query(..., description="")):
     """
         Upload a file to the specified directory.
         If no path is provided, uploads to the root directory.
     """
 
-    return await FileManager.start_upload(request, background_tasks=background_tasks, path=path, filename=filename)
+    return await FileManager.new_start_upload(request, path=path, filename=filename)
 
 @router.get("/upload-progress")
 async def get_upload_progress(task_id = Query("", description="task id to be monitored")):
