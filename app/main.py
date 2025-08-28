@@ -53,7 +53,7 @@ app.add_middleware(
 )
 
 app.include_router(files.router, prefix="/api/v1/files", tags=["files"])
-app.include_router(tus_server.router, prefix="/api/v1/uploads", tags=["tus"])
+app.include_router(tus_server.router, tags=["tus"])
 app.include_router(system.router, prefix="/api/v1/system", tags=["system"])
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(media.router, prefix="/api/v1/media", tags=["media"])

@@ -20,7 +20,8 @@ router = create_tus_router(
     max_size=1024 * 1024 * 1024 * 1024, # 1 TB max upload size
     days_to_keep=1,
     on_upload_complete=on_upload_complete,
-    pre_create_hook=pre_create_hook
+    pre_create_hook=pre_create_hook,
+    prefix="/api/v1/uploads"
 )
 
 
