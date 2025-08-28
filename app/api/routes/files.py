@@ -27,6 +27,31 @@ async def upload_test(request: Request):
 
     return {"filename": target.filename, "size": os.path.getsize("/tmp/sample.py")}
 
+@router.post("/upload-test/sample")
+async def upload_test(request: Request):
+    filename = request.headers.get('filename')
+    if not filename:
+        raise HTTPException(status_code=422, detail='Filename header is missing')
+    
+    file_path = os.path.join('/tmp/sample.py')
+    file_target = FileTarget(file_path)
+
+    parser = StreamingFormDataParser(headers=request.headers)
+    parser.register('file', file_target)
+
+    try:
+        async for chunk in request.stream():
+            parser.data_received(chunk)
+    except ClientDisconnect:
+        raise HTTPException(status_code=499, detail="Client Disconnected")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Error uploading file")
+
+    if not file_target.multipart_filename:
+        raise HTTPException(status_code=422, detail="File is missing")
+
+    return {"message": f"Successfully uploaded {filename}"}
+
 @router.get("/")
 async def list_files(path = Query("", description="Path of the folder to be listed")):
     """
