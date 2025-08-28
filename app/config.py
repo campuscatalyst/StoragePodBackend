@@ -16,6 +16,7 @@ def getDestinationFolder(base_path="/srv"):
         return None
 
 STORAGE_DIR = os.environ.get("STORAGE_DIR", getDestinationFolder())
+TEMP_UPLOADS_DIR = os.path.join(STORAGE_DIR, "storagepod_tmp_upload")
 
 JSON_DIR = "/var/log/storagepod"
 METRICS_FILE = os.path.join(JSON_DIR, "metrics.json")

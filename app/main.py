@@ -6,7 +6,7 @@ from app.db.main import init_db
 from app.core.auth import Auth
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from app.logger import logger
-from app.utils import is_first_boot, scan_and_insert, mark_first_boot_done
+from app.utils import is_first_boot, scan_and_insert, mark_first_boot_done, create_tmp_uploads_folder
 from app.config import STORAGE_DIR
 
 @asynccontextmanager
@@ -21,6 +21,7 @@ async def lifespan(app: FastAPI):
         raise RuntimeError("Failed to create initial user. Aborting startup.")
     
     if is_first_boot():
+        create_tmp_uploads_folder()
         scan_and_insert(root_path=STORAGE_DIR)
         mark_first_boot_done()
     
