@@ -240,8 +240,6 @@ class FileManager:
             async for chunk in request.stream():
                 parser.data_received(chunk)
 
-            parser.finalize()
-
         except ClientDisconnect:
             raise HTTPException(status_code=499, detail="Client Disconnected")
         
