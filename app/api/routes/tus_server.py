@@ -21,12 +21,12 @@ def on_upload_complete(file_path: str, metadata: dict):
         if not FileManager.validate_itemname(filename):
             raise HTTPException(status_code=400, detail="Invalid filename provided")
         
-        destination = os.path.join(target_dir, filename)
+        destination = os.path.join(abs_path, filename)
 
         try:
             # Move the file from temp to destination
             logger.info(f"Moving file from {abs_path} to {destination}")
-            shutil.move(abs_path, destination)
+            shutil.move(file_path, destination)
             logger.info("Moving completed!")
         except Exception as e:
             logger.error(f"Failed to move file: {str(e)}")
