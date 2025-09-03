@@ -25,7 +25,9 @@ def on_upload_complete(file_path: str, metadata: dict):
 
         try:
             # Move the file from temp to destination
-            shutil.move(file_path, destination)
+            logger.info(f"Moving file from {abs_path} to {destination}")
+            shutil.move(abs_path, destination)
+            logger.info("Moving completed!")
         except Exception as e:
             logger.error(f"Failed to move file: {str(e)}")
             raise
@@ -35,6 +37,7 @@ def on_upload_complete(file_path: str, metadata: dict):
 
     except Exception as e:
         logger.error(f"Error while uploading the file - {str(e)}")
+        return HTTPException(status_code=500, detail=f"{str(e)}")
 
 def pre_create_hook(metadata: dict, upload_info: dict):
     if "filename" not in metadata:
