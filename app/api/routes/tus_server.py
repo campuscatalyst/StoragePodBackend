@@ -7,7 +7,6 @@ from app.logger import logger
 
 def on_upload_complete(file_path: str, metadata: dict):
     try:
-        logger.error(file_path)
         target_dir = metadata.get("path")
         filename = metadata.get("filename")
 
@@ -26,7 +25,7 @@ def on_upload_complete(file_path: str, metadata: dict):
 
         try:
             # Move the file from temp to destination
-            logger.info(f"Moving file from {abs_path} to {destination}")
+            logger.info(f"Moving file from {file_path} to {destination}")
             shutil.move(file_path, destination)
             logger.info("Moving completed!")
         except Exception as e:
