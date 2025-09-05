@@ -7,7 +7,7 @@ from app.logger import logger
 
 def on_upload_complete(file_path: str, metadata: dict):
     try:
-        print(file_path)
+        logger.error(file_path)
         target_dir = metadata.get("path")
         filename = metadata.get("filename")
 
