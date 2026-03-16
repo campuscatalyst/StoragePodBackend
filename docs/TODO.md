@@ -54,6 +54,8 @@ Legend: `[P0]` urgent (data loss / security / runaway load), `[P1]` important, `
   - `app/core/file_manager.py` (zip logic)
 - [ ] Add timeouts/limits: max results in search, max directory listing size/page, max zip size, max concurrent compress jobs.
 - [ ] Add request/response models for consistent API shape and smaller responses (especially for large listings).
+- [x] Fix search `limit` typing and clamp to a safe maximum.
+  - `app/api/routes/files.py:116`
 
 ## [P2] Observability / operations
 - [ ] Align logging paths: app logger defaults to `/var/log/app` but JSON metrics are in `/var/log/storagepod`.

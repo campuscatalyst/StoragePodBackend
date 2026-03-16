@@ -614,6 +614,7 @@ class FileManager:
                 sort = sort or "modified_at"
                 order = order or "desc"
                 limit = limit or 50
+                limit = max(1, min(int(limit), 200))
 
                 if not q or len(q.strip()) < 2:
                     return []

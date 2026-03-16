@@ -119,7 +119,7 @@ def search(
     type: str | None  = Query(default=None, description="To search file/folder"),
     sort: str | None = Query(default=None, description="The field that user wants to sort"),
     order: str | None = Query(default=None, description="asc/dsc sort the result"),
-    limit: str | None = Query(default=None, description="Limit to the number of results")
+    limit: int | None = Query(default=None, ge=1, le=200, description="Limit to the number of results (1-200)")
 ):
     """
         This is a global search function, which will search the entire Folder1 contents. 
