@@ -23,6 +23,8 @@ The format is based on *Keep a Changelog*, and this project aims to follow seman
 - Fixed `/search` `limit` typing and clamped results to protect the Pi/SQLite.
 - Folder compression now handles empty folders without errors.
 - CORS is no longer configured as wildcard-origins with credentials; it now uses a safe default allowlist and is env-configurable.
+- Deleting a directory via the API now removes descendant DB entries (prevents stale search results).
 
 ### Security
 - Protected `/api/v1/files/*`, `/api/v1/uploads/*`, and `/api/v1/auth/` user listing with JWT verification.
+- `GET /api/v1/auth/` now requires an admin role.

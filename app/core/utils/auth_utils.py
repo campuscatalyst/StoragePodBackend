@@ -18,6 +18,15 @@ def verify_token(token = Depends(oauth2_scheme)):
         if user_id is None:
             raise creds_exception
 
-        return {"user_id": user_id}
+        role: str | None = payload.get("role")
+        return {"user_id": user_id, "role": role, "payload": payload}
     except jwt.PyJWTError:
         raise creds_exception
+
+def require_admin(token_data: dict = Depends(verify_token)):
+    if token_data.get("role") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin privileges required",
+        )
+    return token_data

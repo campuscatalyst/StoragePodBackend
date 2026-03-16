@@ -17,7 +17,7 @@ from streaming_form_data.targets import FileTarget
 from app.logger import logger
 from app.db.main import get_session
 from app.db.models import FileEntry
-from sqlmodel import select
+from sqlmodel import select, or_
 from starlette.requests import ClientDisconnect
 
 progress_store: Dict[str, int] = {}
@@ -327,21 +327,28 @@ class FileManager:
                 if os.path.isdir(abs_path):
                     dir_info = FileManager.get_file_info(abs_path)
 
-                    dir = session.exec(select(FileEntry).where(FileEntry.file_id == dir_info["id"])).first()
-                    if dir is None: 
-                        return
-                    
-                    session.delete(dir)
+                    # Remove directory entry + all descendants from the DB
+                    rel_dir_path = dir_info["path"]
+                    prefix = f"{rel_dir_path}/"
+                    entries = session.exec(
+                        select(FileEntry).where(
+                            or_(
+                                FileEntry.path == rel_dir_path,
+                                FileEntry.path.startswith(prefix),
+                            )
+                        )
+                    ).all()
+                    for entry in entries:
+                        session.delete(entry)
+
                     shutil.rmtree(abs_path)
                     session.commit()
                 else:
                     file_info = FileManager.get_file_info(abs_path)
 
-                    file = session.exec(select(FileEntry).where(FileEntry.file_id == file_info["id"])).first()
-                    if file is None: 
-                        return
-                    
-                    session.delete(file)
+                    file = session.exec(select(FileEntry).where(FileEntry.path == file_info["path"])).first()
+                    if file is not None:
+                        session.delete(file)
                     os.remove(abs_path)
                     session.commit()
 

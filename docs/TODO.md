@@ -29,9 +29,9 @@ Legend: `[P0]` urgent (data loss / security / runaway load), `[P1]` important, `
 ## [P0] Security hardening
 - [x] Replace `allow_origins=["*"]` + `allow_credentials=True` with a safe, explicit CORS policy.
   - `app/main.py:38`
-- [ ] Add authorization checks for TUS upload creation/completion (otherwise anyone can upload into the storage volume).
+- [x] Add authorization checks for TUS upload creation/completion (otherwise anyone can upload into the storage volume).
   - `app/api/routes/tus_server.py:42`
-- [ ] Remove or lock down “get all users” endpoint (or require admin token).
+- [x] Remove or lock down “get all users” endpoint (or require admin token).
   - `app/api/routes/auth.py:6`
 - [x] Harden path validation to prevent traversal and symlink escapes.
   - `app/core/file_manager.py:45`
@@ -40,8 +40,10 @@ Legend: `[P0]` urgent (data loss / security / runaway load), `[P1]` important, `
 - [ ] Decide the “source of truth” for file metadata:
   - Option A: filesystem is source of truth (DB is cache) → add periodic reconciliation + orphan cleanup.
   - Option B: DB is source of truth → make all operations go through DB transactionally.
-- [ ] Update SQLite entries on rename/move/copy/delete (directory deletes should cascade/remove children).
-  - `app/core/file_manager.py` (rename/move/copy/delete paths)
+- [x] Update SQLite entries on delete (directory deletes cascade/remove children).
+  - `app/core/file_manager.py` (delete paths)
+- [ ] Update SQLite entries on rename/move/copy.
+  - `app/core/file_manager.py` (rename/move/copy paths)
 - [ ] Handle deletions in the DB when files are removed outside the API (stale search results today).
   - `app/utils.py:31` (scan inserts/merges but never deletes)
 - [ ] Move `first_boot.lock` into a persistent location (e.g. inside the DB volume) or store it in SQLite.

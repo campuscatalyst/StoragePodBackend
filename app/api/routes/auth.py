@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends
 from app.core.auth import Auth
 from app.api.routes.models import LoginCredentials
-from app.core.utils.auth_utils import verify_token
+from app.core.utils.auth_utils import require_admin
 router = APIRouter()
 
 @router.get("/")
-async def get_all_users(_: dict = Depends(verify_token)):
+async def get_all_users(_: dict = Depends(require_admin)):
     # TODO - Remove this API route if not required
     """
         returns all the user details. 
