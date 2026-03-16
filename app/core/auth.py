@@ -13,6 +13,11 @@ pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 class Auth:
 
     @staticmethod
+    def _is_hashed_password(value: str) -> bool:
+        # passlib pbkdf2_sha256 hashes look like: "$pbkdf2-sha256$..."
+        return isinstance(value, str) and value.startswith("$pbkdf2-sha256$")
+
+    @staticmethod
     def create_access_token(data: dict, expires_delta = None):
         try:
             to_encode = data.copy()
@@ -33,10 +38,9 @@ class Auth:
             try:
                 existing_user = session.exec(select(User).where(User.username == "admin")).first()
                 if existing_user:
-                    print("Admin user already exists.")
                     return True
                 
-                user = User(username="admin", password="admin")
+                user = User(username="admin", password=Auth.hash_password("admin"))
                 session.add(user)
                 session.commit()
                 session.refresh(user)
@@ -58,7 +62,7 @@ class Auth:
             
             except Exception as e:
                 logger.error(f'Exception occurred: {e}')
-                return HTTPException(status_code=500, detail="Internal Error, unable to get all users")
+                raise HTTPException(status_code=500, detail="Internal Error, unable to get all users")
 
     @staticmethod
     def get_serial_number():
@@ -84,6 +88,8 @@ class Auth:
     @staticmethod
     def verify_password(original_password, password):
         try:
+            if not Auth._is_hashed_password(original_password):
+                return original_password == password
             return pwd_context.verify(password, original_password)
         except Exception as e:
             logger.error(f'Exception occurred: {e}')
@@ -99,9 +105,9 @@ class Auth:
                 statement = select(User).where(User.username == username)
                 user = session.exec(statement=statement).first()
 
-                return user.password
-            except:
-                logger.error("Error while getting the password")
+                return user.password if user else None
+            except Exception as e:
+                logger.error(f"Error while getting the password: {e}")
                 return None
         
     @staticmethod
@@ -116,47 +122,61 @@ class Auth:
         """
 
         if not username or not password:
-            return HTTPException(status_code=400, detail="Username/Password not provided")
+            raise HTTPException(status_code=400, detail="Username/Password not provided")
 
-        # for testing added = bc72285ee4b8686b, uncomment below line in prod.
         serial_number = Auth.get_serial_number()
 
         if serial_number is None:
-            return HTTPException(status_code=503)
-        
-        # get the hashed password and the given password and verify if they are same, if so then create a jwt and return.
-        original_password = Auth.get_password(username=username)
+            raise HTTPException(status_code=503, detail="Unable to read device serial number")
 
-        if username == "admin" and password == serial_number and original_password == "admin":
-            return HTTPException(status_code=403, detail="Reset your password")
+        with get_session() as session:
+            user = session.exec(select(User).where(User.username == username)).first()
+            if not user:
+                raise HTTPException(status_code=401, detail="Invalid credentials")
 
-        if original_password is None:
-            return HTTPException(status_code=503)
+            is_default_admin_password = (
+                username == "admin"
+                and (
+                    user.password == "admin"
+                    or Auth.verify_password(user.password, password="admin")
+                )
+            )
 
-        #verify the password 
-        if Auth.verify_password(original_password, password=password):
+            # First-time admin flow: require serial number to proceed to reset.
+            if is_default_admin_password:
+                if password == serial_number:
+                    raise HTTPException(status_code=403, detail="Reset your password")
+                raise HTTPException(status_code=401, detail="Invalid credentials")
+
+            # Normal credential check
+            if not Auth.verify_password(user.password, password=password):
+                raise HTTPException(status_code=401, detail="Invalid credentials")
+
+            # Opportunistic migration: if we ever accepted a plaintext password, re-hash it.
+            if not Auth._is_hashed_password(user.password):
+                user.password = Auth.hash_password(password=password)
+                user.updated_at = datetime.now(timezone.utc)
+                session.add(user)
+                session.commit()
+
             token = Auth.create_access_token({
                 "sub": username,
-                "role": "admin",
+                "role": "admin" if username == "admin" else "user",
                 "is_verified": True
             })
 
             if not token:
-                return HTTPException(status_code=500, detail="Issue in creating the JWT token")
+                raise HTTPException(status_code=500, detail="Issue in creating the JWT token")
             
-            return dict({
-                "status_code": 200,
+            return {
                 "token": token,
-                "serial_number": Auth.get_serial_number()
-            })
-        else:
-            # password is wrong.
-            return HTTPException(status_code=401)
+                "serial_number": serial_number,
+            }
         
     @staticmethod
     def reset_password(username, password):
         if not username or not password:
-            return HTTPException(status_code=400, detail="Username/Password not provided")
+            raise HTTPException(status_code=400, detail="Username/Password not provided")
         
         # check if user is present if not return invalid request.
         # if present then hash the password and add it to the db along with the updated_at. 
@@ -172,7 +192,7 @@ class Auth:
                 session.commit()
                 session.refresh(user)
 
-                return HTTPException(status_code=201, detail="Password updated successfully")
+                return {"detail": "Password updated successfully"}
             except Exception as e:
                 logger.error(f'Exception occurred: {e}')
-                return HTTPException(status_code=503) 
+                raise HTTPException(status_code=503, detail="Service unavailable") 

@@ -11,9 +11,12 @@ The format is based on *Keep a Changelog*, and this project aims to follow seman
 
 ### Changed
 - systemd timer-triggered services now run as `Type=oneshot` and no longer restart in a loop.
+- Auth responses now use proper exception raising and consistent success payloads.
 
 ### Fixed
 - Recent-activity cleanup jq filter (7-day retention).
 - Recent-activity monitor now initializes a valid JSON array log and handles paths with spaces.
+- Admin user is no longer created with a plaintext password.
 
 ### Security
+- Protected `/api/v1/files/*`, `/api/v1/uploads/*`, and `/api/v1/auth/` user listing with JWT verification.

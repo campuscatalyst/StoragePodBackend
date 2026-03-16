@@ -37,7 +37,7 @@ def on_upload_complete(file_path: str, metadata: dict):
 
     except Exception as e:
         logger.error(f"Error while uploading the file - {str(e)}")
-        return HTTPException(status_code=500, detail=f"{str(e)}")
+        raise HTTPException(status_code=500, detail=f"{str(e)}")
 
 def pre_create_hook(metadata: dict, upload_info: dict):
     if "filename" not in metadata:
@@ -54,6 +54,5 @@ router = create_tus_router(
     pre_create_hook=pre_create_hook,
     prefix="/api/v1/uploads"
 )
-
 
 

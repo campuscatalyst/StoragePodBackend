@@ -14,12 +14,12 @@ Legend: `[P0]` urgent (data loss / security / runaway load), `[P1]` important, `
   - `scripts/recent_files_monitor/storagepod_monitor.sh:15`
 - [x] Make inotify parsing resilient to spaces/newlines in paths (avoid `read event fullpath` splitting).
   - `scripts/recent_files_monitor/storagepod_monitor.sh:20`
-- [ ] Enforce auth on all file-mutating routes (delete/move/copy/rename/compress) and uploads.
+- [x] Enforce auth on all file-mutating routes (delete/move/copy/rename/compress) and uploads.
   - `app/api/routes/files.py:7` (auth dependency currently commented)
-- [ ] Fix FastAPI error handling: don’t `return HTTPException(...)`; `raise` for errors and return normal success responses.
+- [x] Fix FastAPI error handling: don’t `return HTTPException(...)`; `raise` for errors and return normal success responses.
   - `app/core/auth.py:118`, `app/core/auth.py:175`
   - `app/api/routes/tus_server.py:40`
-- [ ] Fix initial admin credential handling (don’t store plaintext `"admin"`; align “first login via serial” flow with actual behavior).
+- [x] Fix initial admin credential handling (don’t store plaintext `"admin"`; align “first login via serial” flow with actual behavior).
   - `app/core/auth.py:39`, `app/core/auth.py:130`
 - [ ] Prevent destructive delete of storage root (`path=""` or `"/"` should be rejected explicitly).
   - `app/core/file_manager.py:300`

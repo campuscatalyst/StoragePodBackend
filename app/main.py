@@ -8,6 +8,8 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from app.logger import logger
 from app.utils import is_first_boot, scan_and_insert, mark_first_boot_done, create_tmp_uploads_folder
 from app.config import STORAGE_DIR
+from app.core.utils.auth_utils import verify_token
+from fastapi import Depends
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -54,7 +56,7 @@ app.add_middleware(
 )
 
 app.include_router(files.router, prefix="/api/v1/files", tags=["files"])
-app.include_router(tus_server.router, tags=["tus"])
+app.include_router(tus_server.router, tags=["tus"], dependencies=[Depends(verify_token)])
 app.include_router(system.router, prefix="/api/v1/system", tags=["system"])
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(media.router, prefix="/api/v1/media", tags=["media"])
