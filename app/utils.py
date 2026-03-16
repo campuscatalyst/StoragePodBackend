@@ -2,9 +2,10 @@ import os
 import mimetypes
 from app.db.main import get_session
 from app.logger import logger
-from app.db.models import FileEntry, MediaEntry
-from datetime import datetime
+from app.db.models import FileEntry, MediaEntry, AppState
+from datetime import datetime, timezone
 from app.config import STORAGE_DIR, TEMP_UPLOADS_DIR
+from sqlmodel import select
 
 # sudo adduser --system --no-create-home --group --uid 1111 jellyfin
 
@@ -24,11 +25,15 @@ def is_media_file(path: str) -> str | None:
     return None
 
 def is_first_boot():
-    return not os.path.exists("first_boot.lock")
+    with get_session() as session:
+        state = session.get(AppState, "first_boot_done")
+        return not (state and state.value == "1")
 
 def mark_first_boot_done():
-    with open("first_boot.lock", "w") as f:
-        f.write("initialized")
+    with get_session() as session:
+        state = AppState(key="first_boot_done", value="1", updated_at=datetime.now(timezone.utc))
+        session.merge(state)
+        session.commit()
 
 def scan_and_insert(root_path: str):
     """

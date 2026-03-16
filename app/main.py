@@ -1,8 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import files, auth, system, media, tus_server
 from contextlib import asynccontextmanager
-from app.db.main import init_db
+from app.db.main import init_db, get_session
 from app.core.auth import Auth
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from app.logger import logger
@@ -11,6 +11,7 @@ from app.config import STORAGE_DIR, settings
 from app.core.utils.auth_utils import verify_token
 from fastapi import Depends
 import os
+from sqlalchemy import text
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -72,3 +73,22 @@ app.include_router(media.router, prefix="/api/v1/media", tags=["media"])
 @app.get("/api/v1/server-status")
 def server_status():
     return {"status": "online"}
+
+@app.get("/healthz")
+def healthz():
+    return {"status": "ok"}
+
+@app.get("/readyz")
+def readyz():
+    # Storage must be mounted/configured
+    if not STORAGE_DIR or not os.path.isdir(STORAGE_DIR):
+        raise HTTPException(status_code=503, detail="Storage directory not ready")
+
+    # DB must be reachable
+    try:
+        with get_session() as session:
+            session.exec(text("SELECT 1"))
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Database not ready: {e}")
+
+    return {"status": "ready"}

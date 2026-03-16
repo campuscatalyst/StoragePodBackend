@@ -8,6 +8,7 @@ The format is based on *Keep a Changelog*, and this project aims to follow seman
 
 ### Added
 - `docs/TODO.md` backlog for robustness/scalability work.
+- `/healthz` and `/readyz` endpoints for ops checks.
 
 ### Changed
 - systemd timer-triggered services now run as `Type=oneshot` and no longer restart in a loop.
@@ -24,6 +25,9 @@ The format is based on *Keep a Changelog*, and this project aims to follow seman
 - Folder compression now handles empty folders without errors.
 - CORS is no longer configured as wildcard-origins with credentials; it now uses a safe default allowlist and is env-configurable.
 - Deleting a directory via the API now removes descendant DB entries (prevents stale search results).
+- Rename/move/copy operations now update SQLite file metadata so `/search` stays accurate.
+- First-boot state is now stored in SQLite instead of a container-local lock file.
+- Logger now prefers `/var/log/storagepod` but falls back safely if the directory isn't writable.
 
 ### Security
 - Protected `/api/v1/files/*`, `/api/v1/uploads/*`, and `/api/v1/auth/` user listing with JWT verification.

@@ -42,11 +42,11 @@ Legend: `[P0]` urgent (data loss / security / runaway load), `[P1]` important, `
   - Option B: DB is source of truth → make all operations go through DB transactionally.
 - [x] Update SQLite entries on delete (directory deletes cascade/remove children).
   - `app/core/file_manager.py` (delete paths)
-- [ ] Update SQLite entries on rename/move/copy.
+- [x] Update SQLite entries on rename/move/copy.
   - `app/core/file_manager.py` (rename/move/copy paths)
 - [ ] Handle deletions in the DB when files are removed outside the API (stale search results today).
   - `app/utils.py:31` (scan inserts/merges but never deletes)
-- [ ] Move `first_boot.lock` into a persistent location (e.g. inside the DB volume) or store it in SQLite.
+- [x] Move `first_boot.lock` into a persistent location (e.g. inside the DB volume) or store it in SQLite.
   - `app/utils.py:22`
 
 ## [P1] Reliability / performance on Raspberry Pi
@@ -60,9 +60,9 @@ Legend: `[P0]` urgent (data loss / security / runaway load), `[P1]` important, `
   - `app/api/routes/files.py:116`
 
 ## [P2] Observability / operations
-- [ ] Align logging paths: app logger defaults to `/var/log/app` but JSON metrics are in `/var/log/storagepod`.
+- [x] Align logging paths: app logger defaults to `/var/log/app` but JSON metrics are in `/var/log/storagepod`.
   - `app/logger.py:5`, `app/config.py:21`
-- [ ] Add a proper `/healthz` + `/readyz` (DB reachable, storage path resolvable, metrics readable).
+- [x] Add a proper `/healthz` + `/readyz` (DB reachable, storage path resolvable, metrics readable).
 - [ ] Pin docker images and Python deps (avoid surprise breakage on Pi).
   - `docker-compose.yaml` (`nginx:latest`)
   - `requirements.txt` (un-pinned versions)

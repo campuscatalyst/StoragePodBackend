@@ -121,6 +121,19 @@ class FileManager:
         }
 
     @staticmethod
+    def _upsert_entry_from_full_path(session, full_path: str):
+        info = FileManager.get_file_info(full_path)
+        entry = FileEntry(
+            file_id=info["id"],
+            path=info["path"],
+            name=info["name"],
+            type="folder" if info["is_directory"] else "file",
+            size=info["size"],
+            modified_at=info["modified_at"],
+        )
+        session.merge(entry)
+
+    @staticmethod
     def list_directory(path):
         abs_path = FileManager.validate_path(path)
         
@@ -514,8 +527,44 @@ class FileManager:
         if os.path.exists(new_path):
             raise HTTPException(status_code=409, detail="File or folder with the new name already exists")
 
+        old_rel_path = os.path.relpath(abs_path, STORAGE_DIR)
+        new_rel_path = os.path.relpath(new_path, STORAGE_DIR)
+
         try:
             shutil.move(abs_path, new_path)
+
+            with get_session() as session:
+                if is_directory:
+                    old_prefix = f"{old_rel_path}/"
+                    new_prefix = f"{new_rel_path}/"
+
+                    entries = session.exec(
+                        select(FileEntry).where(
+                            or_(
+                                FileEntry.path == old_rel_path,
+                                FileEntry.path.startswith(old_prefix),
+                            )
+                        )
+                    ).all()
+
+                    for entry in entries:
+                        if entry.path == old_rel_path:
+                            entry.path = new_rel_path
+                            entry.name = os.path.basename(new_rel_path)
+                        else:
+                            entry.path = entry.path.replace(old_prefix, new_prefix, 1)
+                        session.add(entry)
+                    session.commit()
+                else:
+                    # File move/rename: delete old row and insert fresh from filesystem (file_id can change).
+                    existing = session.exec(select(FileEntry).where(FileEntry.path == old_rel_path)).first()
+                    if existing is not None:
+                        session.delete(existing)
+                        session.commit()
+
+                    FileManager._upsert_entry_from_full_path(session, new_path)
+                    session.commit()
+
             return new_path
         
         except Exception as e:
@@ -556,7 +605,44 @@ class FileManager:
             raise HTTPException(status_code=409, detail="Item with same name already exists at destination")
 
         try:
+            if os.path.isdir(abs_src_path) and os.path.commonpath([abs_src_path, abs_dst_path]) == abs_src_path:
+                raise HTTPException(status_code=400, detail="Destination cannot be inside the source directory")
+
+            old_rel_path = os.path.relpath(abs_src_path, STORAGE_DIR)
+            new_rel_path = os.path.relpath(new_path, STORAGE_DIR)
+
             shutil.move(abs_src_path, new_path)
+
+            with get_session() as session:
+                if os.path.isdir(new_path):
+                    old_prefix = f"{old_rel_path}/"
+                    new_prefix = f"{new_rel_path}/"
+
+                    entries = session.exec(
+                        select(FileEntry).where(
+                            or_(
+                                FileEntry.path == old_rel_path,
+                                FileEntry.path.startswith(old_prefix),
+                            )
+                        )
+                    ).all()
+
+                    for entry in entries:
+                        if entry.path == old_rel_path:
+                            entry.path = new_rel_path
+                        else:
+                            entry.path = entry.path.replace(old_prefix, new_prefix, 1)
+                        session.add(entry)
+                    session.commit()
+                else:
+                    existing = session.exec(select(FileEntry).where(FileEntry.path == old_rel_path)).first()
+                    if existing is not None:
+                        session.delete(existing)
+                        session.commit()
+
+                    FileManager._upsert_entry_from_full_path(session, new_path)
+                    session.commit()
+
             logger.info(f"Moved from src - {abs_src_path} to {abs_dst_path}")
             return new_path
         except Exception as e:
@@ -603,6 +689,20 @@ class FileManager:
                 shutil.copytree(abs_src_path, new_path)
             else:
                 raise HTTPException(status_code=400, detail="Unsupported item type")
+
+            # Insert copied entries into DB.
+            with get_session() as session:
+                if os.path.isdir(new_path):
+                    for dirpath, dirnames, filenames in os.walk(new_path):
+                        FileManager._upsert_entry_from_full_path(session, dirpath)
+                        for name in dirnames:
+                            FileManager._upsert_entry_from_full_path(session, os.path.join(dirpath, name))
+                        for name in filenames:
+                            FileManager._upsert_entry_from_full_path(session, os.path.join(dirpath, name))
+                    session.commit()
+                else:
+                    FileManager._upsert_entry_from_full_path(session, new_path)
+                    session.commit()
             
             logger.info(f"Copied from src - {abs_src_path} to {new_path}")
             return new_path

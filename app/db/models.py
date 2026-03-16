@@ -7,6 +7,11 @@ class FileType(str, Enum):
     file = "file"
     folder = "folder"
 
+class AppState(SQLModel, table=True):
+    key: str = Field(primary_key=True)
+    value: str
+    updated_at: datetime = Field(default_factory=datetime.now)
+
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     username: str = Field(index=True, unique=True)

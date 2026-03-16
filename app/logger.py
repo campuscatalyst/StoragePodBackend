@@ -3,10 +3,28 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 
 class AppLogger:
-    def __init__(self, log_dir="/var/log/app", log_file="app.log"):
-        os.makedirs(log_dir, exist_ok=True)
-        self.log_path = os.path.join(log_dir, log_file)
+    def __init__(self, log_dir: str | None = None, log_file: str = "app.log"):
+        preferred_dir = log_dir or os.environ.get("LOG_DIR") or "/var/log/storagepod"
+        self.log_path = self._resolve_log_path(preferred_dir, log_file)
         self._setup_logger()
+
+    def _resolve_log_path(self, preferred_dir: str, log_file: str) -> str:
+        candidates = [
+            preferred_dir,
+            "/var/log/app",
+            "/tmp/storagepod_logs",
+        ]
+
+        last_error: Exception | None = None
+        for candidate in candidates:
+            try:
+                os.makedirs(candidate, exist_ok=True)
+                return os.path.join(candidate, log_file)
+            except Exception as e:
+                last_error = e
+                continue
+
+        raise RuntimeError(f"Unable to create any log directory: {last_error}")
 
     def _setup_logger(self):
         self.logger = logging.getLogger("app_logger")
