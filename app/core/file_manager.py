@@ -297,8 +297,13 @@ class FileManager:
             This will delete file/folder at the given path. 
         """
 
-        #TODO - Handle the case when path is /, this will delete the entire root structure. TOP priority
+        # Guard against wiping the entire storage root.
+        if path is None or str(path).strip() in {"", "/"}:
+            raise HTTPException(status_code=400, detail="Refusing to delete storage root")
+
         abs_path = FileManager.validate_path(path)
+        if os.path.realpath(abs_path) == os.path.realpath(STORAGE_DIR):
+            raise HTTPException(status_code=400, detail="Refusing to delete storage root")
 
         if not os.path.exists(abs_path):
             raise HTTPException(status_code=404, detail="Path not found")

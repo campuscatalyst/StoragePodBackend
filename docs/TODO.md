@@ -21,7 +21,7 @@ Legend: `[P0]` urgent (data loss / security / runaway load), `[P1]` important, `
   - `app/api/routes/tus_server.py:40`
 - [x] Fix initial admin credential handling (don’t store plaintext `"admin"`; align “first login via serial” flow with actual behavior).
   - `app/core/auth.py:39`, `app/core/auth.py:130`
-- [ ] Prevent destructive delete of storage root (`path=""` or `"/"` should be rejected explicitly).
+- [x] Prevent destructive delete of storage root (`path=""` or `"/"` should be rejected explicitly).
   - `app/core/file_manager.py:300`
 - [ ] Hard-fail early if `STORAGE_DIR` can’t be resolved (avoid import-time crash on `TEMP_UPLOADS_DIR` join).
   - `app/config.py:18`
