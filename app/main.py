@@ -7,7 +7,7 @@ from app.core.auth import Auth
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from app.logger import logger
 from app.utils import is_first_boot, scan_and_insert, mark_first_boot_done, create_tmp_uploads_folder
-from app.config import STORAGE_DIR
+from app.config import STORAGE_DIR, settings
 from app.core.utils.auth_utils import verify_token
 from fastapi import Depends
 import os
@@ -46,8 +46,9 @@ app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*.campuscatalyst.info"
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=settings.CORS_ALLOW_ORIGINS,
+    allow_origin_regex=settings.CORS_ALLOW_ORIGIN_REGEX,
+    allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=[

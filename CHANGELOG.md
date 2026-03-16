@@ -22,6 +22,7 @@ The format is based on *Keep a Changelog*, and this project aims to follow seman
 - Hardened storage path validation to prevent traversal and symlink-based escapes.
 - Fixed `/search` `limit` typing and clamped results to protect the Pi/SQLite.
 - Folder compression now handles empty folders without errors.
+- CORS is no longer configured as wildcard-origins with credentials; it now uses a safe default allowlist and is env-configurable.
 
 ### Security
 - Protected `/api/v1/files/*`, `/api/v1/uploads/*`, and `/api/v1/auth/` user listing with JWT verification.

@@ -27,7 +27,7 @@ Legend: `[P0]` urgent (data loss / security / runaway load), `[P1]` important, `
   - `app/config.py:18`
 
 ## [P0] Security hardening
-- [ ] Replace `allow_origins=["*"]` + `allow_credentials=True` with a safe, explicit CORS policy.
+- [x] Replace `allow_origins=["*"]` + `allow_credentials=True` with a safe, explicit CORS policy.
   - `app/main.py:38`
 - [ ] Add authorization checks for TUS upload creation/completion (otherwise anyone can upload into the storage volume).
   - `app/api/routes/tus_server.py:42`

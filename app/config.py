@@ -1,5 +1,6 @@
 import os
 from pydantic_settings import BaseSettings
+from pydantic import Field
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -33,6 +34,21 @@ RECENT_ACTIVITY_FILE = os.path.join(JSON_DIR, "storagepod_recent_activity.json")
 class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
+    CORS_ALLOW_ORIGINS: list[str] = Field(
+        default_factory=lambda: [
+            "http://localhost",
+            "http://127.0.0.1",
+            "https://localhost",
+            "https://127.0.0.1",
+            "http://storagepod.local",
+            "https://storagepod.local",
+        ]
+    )
+    # Use this if you want to allow subdomains without enumerating them, e.g.:
+    # ^https?://.*\\.campuscatalyst\\.info$
+    CORS_ALLOW_ORIGIN_REGEX: str | None = None
+    # Bearer-token auth does not require credentials; keep this false unless you need cookies.
+    CORS_ALLOW_CREDENTIALS: bool = False
 
     class Config:
         env_file = ".env"
