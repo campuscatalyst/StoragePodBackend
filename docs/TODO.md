@@ -23,7 +23,7 @@ Legend: `[P0]` urgent (data loss / security / runaway load), `[P1]` important, `
   - `app/core/auth.py:39`, `app/core/auth.py:130`
 - [x] Prevent destructive delete of storage root (`path=""` or `"/"` should be rejected explicitly).
   - `app/core/file_manager.py:300`
-- [ ] Hard-fail early if `STORAGE_DIR` can’t be resolved (avoid import-time crash on `TEMP_UPLOADS_DIR` join).
+- [x] Hard-fail early if `STORAGE_DIR` can’t be resolved (avoid import-time crash on `TEMP_UPLOADS_DIR` join).
   - `app/config.py:18`
 
 ## [P0] Security hardening

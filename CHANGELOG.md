@@ -18,6 +18,7 @@ The format is based on *Keep a Changelog*, and this project aims to follow seman
 - Recent-activity monitor now initializes a valid JSON array log and handles paths with spaces.
 - Admin user is no longer created with a plaintext password.
 - Guard against accidental deletion of the storage root via the delete API.
+- Avoid import-time crashes when `STORAGE_DIR` can't be resolved, and fail fast on startup with a clear error.
 
 ### Security
 - Protected `/api/v1/files/*`, `/api/v1/uploads/*`, and `/api/v1/auth/` user listing with JWT verification.

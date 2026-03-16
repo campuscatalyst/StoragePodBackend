@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 
@@ -15,8 +14,13 @@ def getDestinationFolder(base_path="/srv"):
     except FileNotFoundError:
         return None
 
-STORAGE_DIR = os.environ.get("STORAGE_DIR", getDestinationFolder())
-TEMP_UPLOADS_DIR = os.path.join(STORAGE_DIR, "storagepod_tmp_upload")
+_resolved_storage_dir = os.environ.get("STORAGE_DIR") or getDestinationFolder()
+if _resolved_storage_dir:
+    STORAGE_DIR = os.path.realpath(_resolved_storage_dir)
+    TEMP_UPLOADS_DIR = os.path.join(STORAGE_DIR, "storagepod_tmp_upload")
+else:
+    STORAGE_DIR = None
+    TEMP_UPLOADS_DIR = None
 
 JSON_DIR = "/var/log/storagepod"
 METRICS_FILE = os.path.join(JSON_DIR, "metrics.json")
@@ -34,4 +38,3 @@ class Settings(BaseSettings):
         env_file = ".env"
 
 settings = Settings()
-

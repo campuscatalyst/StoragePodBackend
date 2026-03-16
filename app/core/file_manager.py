@@ -49,6 +49,9 @@ class FileManager:
             returns - string - normalised path
         """
 
+        if not STORAGE_DIR:
+            raise HTTPException(status_code=503, detail="Storage directory not configured/mounted")
+
         # Convert to absolute path within the storage directory
         abs_path = os.path.normpath(os.path.join(STORAGE_DIR, path.lstrip("/")))
 

@@ -9,6 +9,8 @@ from app.config import STORAGE_DIR, TEMP_UPLOADS_DIR
 # sudo adduser --system --no-create-home --group --uid 1111 jellyfin
 
 def create_tmp_uploads_folder():
+    if not TEMP_UPLOADS_DIR:
+        raise RuntimeError("TEMP_UPLOADS_DIR is not configured (storage dir missing)")
     os.makedirs(TEMP_UPLOADS_DIR, exist_ok=True)
 
 def is_media_file(path: str) -> str | None:

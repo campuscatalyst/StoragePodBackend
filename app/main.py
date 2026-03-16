@@ -10,6 +10,7 @@ from app.utils import is_first_boot, scan_and_insert, mark_first_boot_done, crea
 from app.config import STORAGE_DIR
 from app.core.utils.auth_utils import verify_token
 from fastapi import Depends
+import os
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -21,6 +22,12 @@ async def lifespan(app: FastAPI):
 
     if not success:
         raise RuntimeError("Failed to create initial user. Aborting startup.")
+
+    if not STORAGE_DIR or not os.path.isdir(STORAGE_DIR):
+        raise RuntimeError(
+            "Storage directory not configured/mounted. "
+            "Set STORAGE_DIR or ensure /srv/dev-disk-*/Folder1 exists."
+        )
     
     if is_first_boot():
         create_tmp_uploads_folder()
