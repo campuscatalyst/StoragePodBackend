@@ -50,7 +50,7 @@ Legend: `[P0]` urgent (data loss / security / runaway load), `[P1]` important, `
 ## [P1] Reliability / performance on Raspberry Pi
 - [ ] Offload heavy blocking IO (zip, large directory stats, shutil operations) to background worker/threadpool; avoid blocking the event loop.
   - `app/core/file_manager.py` (list/zip/compress/move/copy)
-- [ ] Make zip progress robust for empty folders (avoid divide-by-zero).
+- [x] Make zip progress robust for empty folders (avoid divide-by-zero).
   - `app/core/file_manager.py` (zip logic)
 - [ ] Add timeouts/limits: max results in search, max directory listing size/page, max zip size, max concurrent compress jobs.
 - [ ] Add request/response models for consistent API shape and smaller responses (especially for large listings).

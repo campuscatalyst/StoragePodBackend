@@ -394,6 +394,13 @@ class FileManager:
         total_files = len(all_files)
 
         try:
+            if total_files == 0:
+                # Create an empty zip and mark progress complete.
+                with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED):
+                    pass
+                progress_store[task_id] = 100
+                return
+
             with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zipf:
                 for idx, file in enumerate(all_files):
                     try:
