@@ -3,8 +3,8 @@ Description=StoragePod Media Metrics Scanner, this will scan the folder1 and upd
 After=network.target
 
 [Service]
+Type=oneshot
 ExecStart=/usr/local/bin/media_metrics_scanner.sh
-Restart=always
 
 [Install]
 WantedBy=multi-user.target

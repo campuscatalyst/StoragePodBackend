@@ -1,0 +1,19 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on *Keep a Changelog*, and this project aims to follow semantic versioning once releases start.
+
+## Unreleased
+
+### Added
+- `docs/TODO.md` backlog for robustness/scalability work.
+
+### Changed
+- systemd timer-triggered services now run as `Type=oneshot` and no longer restart in a loop.
+
+### Fixed
+- Recent-activity cleanup jq filter (7-day retention).
+- Recent-activity monitor now initializes a valid JSON array log and handles paths with spaces.
+
+### Security

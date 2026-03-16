@@ -14,10 +14,15 @@ fi
 mkdir -p "$(dirname "$LOG_FILE")"
 touch "$LOG_FILE"
 
+# Ensure the log file is valid JSON (array). Initialize if empty/invalid.
+if [ ! -s "$LOG_FILE" ] || ! jq -e '.' "$LOG_FILE" >/dev/null 2>&1; then
+    echo '[]' > "$LOG_FILE"
+fi
+
 echo "Watching: $WATCH_DIR"
 
 # Append JSON entries on file create/modify
-inotifywait -m -r -e create -e modify --format '%e %w%f' "$WATCH_DIR" | while read event fullpath; do
+inotifywait -m -r -e create -e modify --format '%e|%w%f' "$WATCH_DIR" | while IFS='|' read -r event fullpath; do
     timestamp=$(date --iso-8601=seconds)
 
     tmp=$(mktemp)

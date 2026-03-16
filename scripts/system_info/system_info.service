@@ -3,8 +3,8 @@ Description=Run disk info, system info & file system info scripts. these scripts
 After=network.target
 
 [Service]
+Type=oneshot
 ExecStart=/usr/local/bin/run_all.sh
-Restart=always
 
 [Install]
 WantedBy=multi-user.target
