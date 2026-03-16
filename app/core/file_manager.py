@@ -52,13 +52,24 @@ class FileManager:
         if not STORAGE_DIR:
             raise HTTPException(status_code=503, detail="Storage directory not configured/mounted")
 
-        # Convert to absolute path within the storage directory
-        abs_path = os.path.normpath(os.path.join(STORAGE_DIR, path.lstrip("/")))
+        path = "" if path is None else str(path)
 
-        if not abs_path.startswith(STORAGE_DIR):
+        # Convert to absolute path within the storage directory
+        joined_path = os.path.join(STORAGE_DIR, path.lstrip("/"))
+        normalized_path = os.path.normpath(joined_path)
+
+        # Resolve symlinks to prevent escapes like: root/ok -> /etc
+        real_root = os.path.realpath(STORAGE_DIR)
+        real_abs = os.path.realpath(normalized_path)
+
+        try:
+            if os.path.commonpath([real_root, real_abs]) != real_root:
+                raise HTTPException(status_code=403, detail="Access Denied")
+        except ValueError:
+            # Defensive: if paths are incomparable (different mounts/drives), deny.
             raise HTTPException(status_code=403, detail="Access Denied")
         
-        return abs_path
+        return real_abs
     
     @staticmethod
     def get_metrics():

@@ -33,6 +33,8 @@ Legend: `[P0]` urgent (data loss / security / runaway load), `[P1]` important, `
   - `app/api/routes/tus_server.py:42`
 - [ ] Remove or lock down “get all users” endpoint (or require admin token).
   - `app/api/routes/auth.py:6`
+- [x] Harden path validation to prevent traversal and symlink escapes.
+  - `app/core/file_manager.py:45`
 
 ## [P1] Data integrity (DB ↔ filesystem consistency)
 - [ ] Decide the “source of truth” for file metadata:
